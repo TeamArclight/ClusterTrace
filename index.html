@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>ClusterTrace · Plastic Chain of Custody & Mass Balance</title>
+  <title>ClusterTrace · Plastic Chain of Custody & Deterministic Mass Balance</title>
   <style>
     :root {
       --primary: #0d6e59;
@@ -13,8 +13,8 @@
       --surface: #ffffff;
       --border: #d5ded8;
       --text: #1a2e2b;
-      --muted: #5e7570;
-      --warn-bg: #fff0ed;
+      --muted: #576f6a;
+      --warn-bg: #fff1f0;
       --warn-text: #b3261e;
       --warn-border: #f8c9c4;
       --ok-bg: #e6f7ec;
@@ -28,19 +28,21 @@
       background: var(--bg);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { max-width: 1240px; margin: auto; padding: 24px 16px 60px; line-height: 1.5; }
+    body { max-width: 1280px; margin: auto; padding: 24px 16px 80px; line-height: 1.5; font-size: 15px; }
+
+    /* Header */
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 18px;
+      gap: 16px;
       flex-wrap: wrap;
-      margin-bottom: 20px;
-      padding-bottom: 18px;
+      margin-bottom: 18px;
+      padding-bottom: 16px;
       border-bottom: 1px solid var(--border);
     }
     .brand-title { display: flex; align-items: center; gap: 12px; }
-    .brand-title h1 { font-size: 2rem; color: var(--primary-dark); letter-spacing: -0.02em; }
+    .brand-title h1 { font-size: 2.1rem; color: var(--primary-dark); letter-spacing: -0.02em; font-weight: 800; }
     .tag {
       font-size: 0.72rem;
       font-weight: 700;
@@ -48,71 +50,133 @@
       letter-spacing: 0.08em;
       background: var(--primary-light);
       color: var(--primary);
-      padding: 3px 8px;
+      padding: 4px 9px;
       border-radius: 6px;
       display: inline-block;
     }
     .header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    
-    /* Disclaimer Banner */
+
+    /* Prominent Mandatory Compliance Disclaimer */
     .disclaimer-banner {
       background: #fff8e1;
       border: 1px solid #ffe082;
       color: #6d4c41;
       border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 0.83rem;
-      margin-bottom: 18px;
+      padding: 12px 16px;
+      font-size: 0.88rem;
+      margin-bottom: 22px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.03);
     }
-    .disclaimer-banner strong { color: #bf360c; }
+    .disclaimer-banner strong { color: #bf360c; font-weight: 700; }
 
-    /* Sankalp Quick Demo Hero Card */
-    .demo-hero {
+    /* 60-Second Guided Demo Story Banner */
+    .story-hero {
       background: linear-gradient(135deg, #09473b 0%, #116f5d 100%);
       color: white;
       border-radius: var(--radius);
-      padding: 18px 22px;
-      margin-bottom: 22px;
-      box-shadow: 0 4px 16px rgba(13, 110, 89, 0.18);
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 6px 20px rgba(13, 110, 89, 0.22);
+    }
+    .story-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
       gap: 16px;
+      margin-bottom: 18px;
     }
-    .demo-hero h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 4px; }
-    .demo-hero p { font-size: 0.9rem; color: #d6ebe4; max-width: 720px; }
-    .demo-btn {
+    .story-header h2 { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.01em; }
+    .story-header p { font-size: 0.94rem; color: #d6ebe4; max-width: 760px; margin-top: 4px; }
+    .play-btn {
       background: #ffecb3;
-      color: #5d4037;
+      color: #4e342e;
       border: 0;
-      padding: 11px 18px;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 0.92rem;
+      padding: 12px 22px;
+      border-radius: 9px;
+      font-weight: 800;
+      font-size: 1rem;
       cursor: pointer;
-      transition: background 0.15s ease;
-      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
     }
-    .demo-btn:hover { background: #ffe082; }
+    .play-btn:hover { background: #ffe082; transform: translateY(-1px); }
 
-    /* Workflow Nav Tabs */
-    .tabs-nav-wrapper { margin-bottom: 20px; }
-    .tabs-meta {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--muted);
+    /* Story Stepper Cards */
+    .story-stepper {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .story-step-card {
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 10px;
+      padding: 14px;
+      color: white;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      position: relative;
+    }
+    .story-step-card.active {
+      background: white;
+      color: var(--text);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+      border-color: white;
+    }
+    .story-step-num {
+      font-size: 0.72rem;
+      font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      opacity: 0.85;
+      margin-bottom: 4px;
+    }
+    .story-step-card.active .story-step-num { color: var(--primary); }
+    .story-step-title { font-size: 0.98rem; font-weight: 700; margin-bottom: 6px; }
+    .story-step-metric { font-size: 1.15rem; font-weight: 800; margin-bottom: 4px; }
+    .story-step-desc { font-size: 0.82rem; opacity: 0.9; line-height: 1.35; }
+    .story-step-card.active .story-step-desc { color: var(--muted); }
+
+    /* Notification message */
+    #notice {
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: none;
+      font-size: 0.94rem;
+      line-height: 1.4;
+      animation: fadeIn 0.2s ease;
+    }
+    #notice.ok { display: block; background: var(--ok-bg); color: var(--ok-text); border: 1px solid var(--ok-border); }
+    #notice.error { display: block; background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--warn-border); }
+    #notice.info { display: block; background: var(--info-bg); color: var(--info-text); border: 1px solid #bbd3ea; }
+
+    /* Workflow Nav Tabs */
+    .tabs-nav-wrapper { margin-bottom: 22px; }
+    .tabs-meta {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
       margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     .tabs-nav {
       display: flex;
       gap: 8px;
-      background: #e3ebe5;
+      background: #e2ebe4;
       padding: 6px;
       border-radius: 10px;
       overflow-x: auto;
@@ -123,7 +187,7 @@
       background: transparent;
       border: 0;
       color: var(--text);
-      font-size: 0.9rem;
+      font-size: 0.92rem;
       font-weight: 600;
       padding: 10px 14px;
       border-radius: 7px;
@@ -133,30 +197,19 @@
       justify-content: center;
       gap: 8px;
       transition: all 0.15s ease;
+      white-space: nowrap;
     }
     .tab-btn.active {
       background: var(--surface);
       color: var(--primary-dark);
       box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      font-weight: 700;
     }
 
-    /* Notification message */
-    #notice {
-      padding: 13px 16px;
-      border-radius: 8px;
-      margin-bottom: 18px;
-      display: none;
-      font-size: 0.92rem;
-      line-height: 1.4;
-      animation: fadeIn 0.2s ease;
-    }
-    #notice.ok { display: block; background: var(--ok-bg); color: var(--ok-text); border: 1px solid var(--ok-border); }
-    #notice.error { display: block; background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--warn-border); }
-    #notice.info { display: block; background: var(--info-bg); color: var(--info-text); border: 1px solid #bbd3ea; }
-
-    /* Cards & Grids */
+    /* Cards & Layouts */
     .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
     .grid-1 { display: grid; grid-template-columns: 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -164,21 +217,22 @@
       padding: 22px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.02);
     }
-    .card h3 { font-size: 1.15rem; color: var(--primary-dark); margin-bottom: 8px; }
-    .card-desc { font-size: 0.85rem; color: var(--muted); margin-bottom: 16px; }
+    .card h3 { font-size: 1.2rem; color: var(--primary-dark); margin-bottom: 8px; font-weight: 700; }
+    .card-desc { font-size: 0.88rem; color: var(--muted); margin-bottom: 16px; }
 
-    /* Forms & Inputs */
-    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 12px; color: var(--text); }
-    .field-hint { display: block; font-size: 0.75rem; font-weight: normal; color: var(--muted); margin-top: 3px; }
-    .self-reported-badge {
-      font-size: 0.7rem;
+    /* Form Inputs */
+    label { display: block; font-size: 0.88rem; font-weight: 650; margin-bottom: 12px; color: var(--text); }
+    .field-hint { display: block; font-size: 0.78rem; font-weight: normal; color: var(--muted); margin-top: 3px; }
+    .evidence-badge {
+      font-size: 0.72rem;
       background: #fff3e0;
       color: #e65100;
-      padding: 2px 6px;
+      padding: 2px 7px;
       border-radius: 4px;
-      font-weight: 600;
+      font-weight: 700;
       margin-left: 6px;
       text-transform: uppercase;
+      letter-spacing: 0.03em;
     }
     input, select, textarea {
       width: 100%;
@@ -186,11 +240,11 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       font: inherit;
-      font-size: 0.92rem;
+      font-size: 0.94rem;
       margin-top: 5px;
       background: white;
     }
-    input:focus, select:focus {
+    input:focus, select:focus, textarea:focus {
       outline: none;
       border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(13, 110, 89, 0.15);
@@ -201,14 +255,14 @@
       border: 0;
       padding: 11px 18px;
       border-radius: 8px;
-      font-size: 0.92rem;
-      font-weight: 650;
+      font-size: 0.94rem;
+      font-weight: 700;
       cursor: pointer;
-      transition: background 0.15s ease;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
+      transition: background 0.15s ease;
     }
     button.primary:hover { background: var(--primary-dark); }
     button.secondary {
@@ -218,67 +272,89 @@
       padding: 9px 14px;
       border-radius: 7px;
       font-size: 0.88rem;
-      font-weight: 600;
+      font-weight: 650;
       cursor: pointer;
     }
     button.secondary:hover { background: #d3eadf; }
-    button.fraud-trigger {
+    button.danger {
       background: #fbe9e7;
       color: #c62828;
       border: 1px solid #ffcdd2;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 0.82rem;
+      padding: 9px 14px;
+      border-radius: 7px;
+      font-size: 0.88rem;
       font-weight: 700;
       cursor: pointer;
     }
-    button.fraud-trigger:hover { background: #ffcdd2; }
-    button.legit-trigger {
+    button.danger:hover { background: #ffcdd2; }
+    button.success {
       background: #e8f5e9;
       color: #2e7d32;
       border: 1px solid #c8e6c9;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 0.82rem;
+      padding: 9px 14px;
+      border-radius: 7px;
+      font-size: 0.88rem;
       font-weight: 700;
       cursor: pointer;
     }
-    button.legit-trigger:hover { background: #c8e6c9; }
+    button.success:hover { background: #c8e6c9; }
+
+    /* Evidence Box */
+    .evidence-upload-zone {
+      border: 2px dashed #b9cdc2;
+      border-radius: 10px;
+      padding: 14px;
+      background: #fafcfa;
+      text-align: center;
+      margin-top: 6px;
+      cursor: pointer;
+    }
+    .evidence-preview-img {
+      max-width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      margin-top: 8px;
+    }
 
     /* Tables */
     .table-wrapper { overflow-x: auto; margin-top: 10px; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
-    th { text-align: left; padding: 10px 12px; background: #ebf1ed; color: var(--muted); font-weight: 700; border-bottom: 1px solid var(--border); }
-    td { padding: 10px 12px; border-bottom: 1px solid #e7eee9; vertical-align: middle; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th { text-align: left; padding: 10px 12px; background: #eaf1ec; color: var(--muted); font-weight: 700; border-bottom: 1px solid var(--border); }
+    td { padding: 11px 12px; border-bottom: 1px solid #e7eee9; vertical-align: middle; }
     tr:hover td { background: #fafbfa; }
-    code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; background: #eef3ef; padding: 2px 5px; border-radius: 4px; font-size: 0.82rem; }
+    code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; background: #eef3ef; padding: 2px 6px; border-radius: 4px; font-size: 0.84rem; }
 
     /* Status Pills */
-    .pill { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.74rem; font-weight: 700; }
+    .pill { display: inline-block; padding: 4px 9px; border-radius: 12px; font-size: 0.76rem; font-weight: 700; }
     .pill-unbatched { background: #e0f2fe; color: #0369a1; }
     .pill-batched { background: #f1f5f9; color: #475569; }
     .pill-pending { background: #fef3c7; color: #92400e; }
     .pill-processed { background: #dcfce7; color: #166534; }
-    .pill-rejected { background: #fee2e2; color: #991b1b; }
+    .pill-discrepancy { background: #fee2e2; color: #991b1b; }
+    .pill-review { background: #ffedd5; color: #9a3412; }
 
-    /* Lineage Drill Down Visualizer */
-    .lineage-container {
-      background: #f9fbf9;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 20px;
-      margin-top: 18px;
+    /* Finding / Discrepancy Cards */
+    .finding-card {
+      background: #fff8f8;
+      border-left: 4px solid #d32f2f;
+      border-radius: 0 8px 8px 0;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      border-top: 1px solid #fee2e2;
+      border-right: 1px solid #fee2e2;
+      border-bottom: 1px solid #fee2e2;
     }
-    .lineage-stages {
-      display: flex;
-      align-items: stretch;
-      gap: 16px;
-      overflow-x: auto;
-      padding: 10px 4px 18px;
-    }
+    .finding-title { font-size: 0.94rem; font-weight: 750; color: #b71c1c; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .finding-calc { font-family: ui-monospace, monospace; background: #fbe9e7; padding: 4px 8px; border-radius: 5px; font-size: 0.82rem; margin: 6px 0; display: inline-block; }
+    .finding-human { font-size: 0.82rem; color: #4e342e; background: #fffde7; padding: 6px 10px; border-radius: 6px; border: 1px solid #fff59d; margin-top: 6px; }
+
+    /* Lineage Stages Visualizer */
+    .lineage-stages { display: flex; align-items: stretch; gap: 14px; overflow-x: auto; padding: 8px 2px 16px; }
     .lineage-step {
       flex: 1;
-      min-width: 250px;
+      min-width: 260px;
       background: white;
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -286,40 +362,11 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.02);
       display: flex;
       flex-direction: column;
-      position: relative;
     }
-    .lineage-step-header {
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--primary);
-      margin-bottom: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .lineage-step-title { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
-    .lineage-step-content { font-size: 0.82rem; color: var(--text); flex-grow: 1; }
-    .lineage-arrow {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.4rem;
-      color: var(--muted);
-      user-select: none;
-    }
-    .lot-chip {
-      background: #f0f7f3;
-      border: 1px solid #d5e6db;
-      border-radius: 6px;
-      padding: 8px 10px;
-      margin-bottom: 8px;
-      font-size: 0.8rem;
-    }
+    .lineage-arrow { display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: var(--muted); user-select: none; }
 
-    /* Event Trail */
-    .event-list { list-style: none; margin-top: 12px; }
+    /* Recorded Event Trail */
+    .event-list { list-style: none; margin-top: 10px; }
     .event-item {
       padding: 12px 14px;
       border-left: 3px solid var(--primary);
@@ -329,61 +376,105 @@
       border-top: 1px solid #eef3ef;
       border-right: 1px solid #eef3ef;
       border-bottom: 1px solid #eef3ef;
-      font-size: 0.84rem;
+      font-size: 0.86rem;
     }
-    .event-item.rejected {
-      border-left-color: #d32f2f;
-      background: #fff8f7;
+    .event-item.discrepancy { border-left-color: #d32f2f; background: #fff9f9; }
+
+    /* Insights KPI Stat Cards */
+    .stat-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
     }
-    .event-meta { display: flex; justify-content: space-between; font-size: 0.76rem; color: var(--muted); margin-bottom: 4px; }
-    .event-title { font-weight: 700; font-size: 0.88rem; }
-    .event-reason { color: #c62828; font-weight: 600; margin-top: 4px; }
+    .stat-label { font-size: 0.82rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .stat-value { font-size: 1.8rem; font-weight: 800; color: var(--primary-dark); margin: 4px 0; }
+    .stat-hint { font-size: 0.78rem; color: var(--muted); }
 
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
-    @media (max-width: 860px) {
-      .grid-2 { grid-template-columns: 1fr; }
+    @media (max-width: 900px) {
+      .story-stepper { grid-template-columns: 1fr; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
       .lineage-stages { flex-direction: column; }
-      .lineage-arrow { transform: rotate(90deg); margin: 6px 0; }
+      .lineage-arrow { transform: rotate(90deg); margin: 4px 0; }
     }
   </style>
 </head>
 <body>
 
+  <!-- Header -->
   <header>
     <div>
       <div class="brand-title">
         <span class="tag">Chain of Custody Ledger</span>
         <h1>ClusterTrace</h1>
       </div>
-      <p style="color: var(--muted); font-size: 0.92rem; margin-top: 4px;">
-        Deterministic mass balance and source lot lineage for plastic collection and recycling.
+      <p style="color: var(--muted); font-size: 0.94rem; margin-top: 4px;">
+        Deterministic mass balance, chain-of-custody handovers, evidence hashing, and explainable discrepancy detection.
       </p>
     </div>
     <div class="header-actions">
-      <button class="secondary" onclick="refresh()">↻ Refresh State</button>
-      <button class="primary" onclick="createDemoScenario()">+ Create 340 kg Demo Scenario</button>
+      <button class="secondary" onclick="refresh()">↻ Refresh Ledger</button>
+      <button class="primary" onclick="playGuidedDemo()">▶ Play 60-Second Demo Story</button>
     </div>
   </header>
 
-  <!-- Product & Compliance Disclaimer -->
+  <!-- Prominent Mandatory Integrity Statement -->
   <div class="disclaimer-banner">
-    <span>⚠️</span>
+    <span style="font-size: 1.4rem;">⚠️</span>
     <div>
-      <strong>Supporting Traceability Audit Pack · NOT an Official EPR Certificate</strong> — 
-      Collection weights, locations, and photo references are self-reported by field actors and unverified by independent scales or physical audits. Mass balance is verified deterministically against recorded input data.
+      <strong>Supporting Traceability Audit Pack · Not an official EPR certificate</strong> — 
+      Collection weights, locations, and photo references are submitted evidence from field actors, not independently verified truths. Mass balance and handovers are deterministically reconciled against recorded inputs; failed checks are flagged discrepancies requiring auditor verification.
     </div>
   </div>
 
-  <!-- Hero Sankalp Fraud Test Box -->
-  <div class="demo-hero">
-    <div>
-      <h2>Sankalp Demonstration: 340 kg Input vs 500 kg Output Claim</h2>
-      <p>
-        Demonstrates zero-tolerance fraud prevention: 2 lots totaling <strong>340.000 kg</strong> are batched together. When a recycler attempts to claim <strong>500.000 kg</strong> of recycled flakes, ClusterTrace strictly rejects the claim (+160 kg phantom mass) and logs the violation in the immutable event trail.
-      </p>
+  <!-- Visual 60-Second Guided Demo Story Banner -->
+  <div class="story-hero" id="storyHeroSection">
+    <div class="story-header">
+      <div>
+        <span class="tag" style="background: rgba(255,255,255,0.2); color: white; margin-bottom: 6px;">Sankalp 60-Second Demo Story</span>
+        <h2>Chain of Custody & Deterministic Discrepancy Flow</h2>
+        <p>
+          Follow a real batch lifecycle: 200 kg + 140 kg collection lots are aggregated into a 340 kg batch. When an unauthorized 500 kg output claim is submitted, ClusterTrace deterministically flags the <strong>160 kg discrepancy</strong> and routes the case to auditor review.
+        </p>
+      </div>
+      <div>
+        <button class="play-btn" onclick="playGuidedDemo()">
+          <span>▶</span> <span id="storyPlayBtnLabel">Play 60-Second Demo</span>
+        </button>
+      </div>
     </div>
-    <div>
-      <button class="demo-btn" onclick="startFraudDemo()">▶ Run 340 kg Fraud Demo</button>
+
+    <!-- 4-Stage Visual Cards -->
+    <div class="story-stepper">
+      <div class="story-step-card active" id="stepCard-1" onclick="showStoryStep(1)">
+        <div class="story-step-num">Stage 1 · Evidence</div>
+        <div class="story-step-title">Collection Lots</div>
+        <div class="story-step-metric">200 + 140 kg</div>
+        <div class="story-step-desc">Pickers P-101 & P-102 record bags with photos, SHA-256 hashes & GPS coordinates.</div>
+      </div>
+
+      <div class="story-step-card" id="stepCard-2" onclick="showStoryStep(2)">
+        <div class="story-step-num">Stage 2 · Aggregation</div>
+        <div class="story-step-title">Aggregator Batch</div>
+        <div class="story-step-metric">340.000 kg</div>
+        <div class="story-step-desc">Central Hub aggregates lots into sealed PET batch with signed custody handovers.</div>
+      </div>
+
+      <div class="story-step-card" id="stepCard-3" onclick="showStoryStep(3)">
+        <div class="story-step-num">Stage 3 · Mass Balance</div>
+        <div class="story-step-title">Claim Discrepancy</div>
+        <div class="story-step-metric" style="color: #ffcdd2;">+160 kg Excess</div>
+        <div class="story-step-desc">Recycler reports 500 kg output. Deterministic rule blocks output & flags discrepancy.</div>
+      </div>
+
+      <div class="story-step-card" id="stepCard-4" onclick="showStoryStep(4)">
+        <div class="story-step-num">Stage 4 · Resolution</div>
+        <div class="story-step-title">Auditor Review</div>
+        <div class="story-step-metric" style="color: #ffe082;">Needs Field Check</div>
+        <div class="story-step-desc">Case routed to auditor queue with discrepancy math and recommended scale inspection.</div>
+      </div>
     </div>
   </div>
 
@@ -391,69 +482,104 @@
 
   <!-- Operational Perspective Tabs -->
   <div class="tabs-nav-wrapper">
-    <div class="tabs-meta">Workflow Views · Single-tenant demonstration (No separate accounts/login required)</div>
+    <div class="tabs-meta">
+      <span>Operational Workflow Views</span>
+      <span style="font-weight: normal; color: var(--muted); text-transform: none;">Demo modes · No separate authentication required</span>
+    </div>
     <div class="tabs-nav">
-      <button class="tab-btn active" id="tab-picker" onclick="setTab('picker')">📦 1. Picker View</button>
-      <button class="tab-btn" id="tab-aggregator" onclick="setTab('aggregator')">🏭 2. Aggregator View</button>
-      <button class="tab-btn" id="tab-recycler" onclick="setTab('recycler')">♻️ 3. Recycler View</button>
-      <button class="tab-btn" id="tab-brand" onclick="setTab('brand')">🏷️ 4. Brand & Audit View</button>
+      <button class="tab-btn active" id="tab-picker" onclick="setTab('picker')">📦 1. Picker & Evidence</button>
+      <button class="tab-btn" id="tab-aggregator" onclick="setTab('aggregator')">🏭 2. Aggregator & Handovers</button>
+      <button class="tab-btn" id="tab-recycler" onclick="setTab('recycler')">♻️ 3. Recycler Processing</button>
+      <button class="tab-btn" id="tab-auditor" onclick="setTab('auditor')">⚖️ 4. Auditor Case Queue</button>
+      <button class="tab-btn" id="tab-brand" onclick="setTab('brand')">🏷️ 5. Lineage & Audit Pack</button>
+      <button class="tab-btn" id="tab-insights" onclick="setTab('insights')">📊 6. Insights & Economics</button>
     </div>
   </div>
 
-  <!-- VIEW 1: PICKER -->
+  <!-- ================================================================= -->
+  <!-- VIEW 1: PICKER & EVIDENCE CAPTURE -->
+  <!-- ================================================================= -->
   <div id="view-picker" class="tab-content">
     <div class="grid-2">
       <section class="card">
-        <h3>Record Collection Lot</h3>
-        <p class="card-desc">Enter raw collection lot details collected from waste pickers or informal collection hubs.</p>
+        <h3>Record Collection Lot & Upload Evidence</h3>
+        <p class="card-desc">Enter field collection data. Upload actual bag photos to compute cryptographic SHA-256 hashes and capture optional GPS coordinates.</p>
+        
         <form id="lotForm">
           <label>
             Picker ID / Identifier
             <span class="field-hint">e.g., P-101, Ragpickers Self-Help Group</span>
             <input name="picker" required placeholder="P-101">
           </label>
-          <label>
-            Polymer Material
-            <span class="field-hint">Single plastic type</span>
-            <select name="material" required>
-              <option value="PET" selected>PET (Polyethylene Terephthalate)</option>
-              <option value="HDPE">HDPE (High-Density Polyethylene)</option>
-              <option value="PP">PP (Polypropylene)</option>
-              <option value="LDPE">LDPE (Low-Density Polyethylene)</option>
-            </select>
-          </label>
-          <label>
-            Field Weight (kg) <span class="self-reported-badge">Self-reported</span>
-            <span class="field-hint">Positive weight with at most 3 decimal places</span>
-            <input name="weight" type="number" step="0.001" min="0.001" required placeholder="120.000">
-          </label>
-          <label>
-            Collection Location / Ward <span class="self-reported-badge">Self-reported</span>
-            <span class="field-hint">Unverified location claim</span>
-            <input name="location" required placeholder="Kolkata Ward 12, Hub A">
-          </label>
-          <label>
-            Photo Reference String <span class="self-reported-badge">Unverified reference</span>
-            <span class="field-hint">Text reference or file pointer; no image validation performed</span>
-            <input name="photo_ref" placeholder="bag-pet-photo-001.jpg">
-          </label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <label>
+              Polymer Material
+              <select name="material" required>
+                <option value="PET" selected>PET (Polyethylene Terephthalate)</option>
+                <option value="HDPE">HDPE (High-Density Polyethylene)</option>
+                <option value="PP">PP (Polypropylene)</option>
+                <option value="LDPE">LDPE (Low-Density Polyethylene)</option>
+              </select>
+            </label>
+            <label>
+              Field Weight (kg) <span class="evidence-badge">Self-Reported</span>
+              <input name="weight" type="number" step="0.001" min="0.001" required placeholder="120.000">
+            </label>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <label>
+              Reported Rate (₹/kg)
+              <span class="field-hint">For income calculation</span>
+              <input name="price_per_kg" type="number" step="0.01" min="0" value="16.00">
+            </label>
+            <label>
+              Collection Location <span class="evidence-badge">Self-Reported</span>
+              <input name="location" required placeholder="Kolkata Ward 12, Hub A">
+            </label>
+          </div>
+
+          <!-- Feature 1: Evidence Capture File Upload -->
+          <div style="margin: 12px 0; background: #f8faf8; border: 1px solid var(--border); border-radius: 8px; padding: 14px;">
+            <label style="margin-bottom: 4px;">
+              Attach Photo Evidence <span class="evidence-badge">Submitted Evidence</span>
+              <span class="field-hint">JPEG, PNG, WebP up to 5 MB. Generates local SHA-256 hash.</span>
+              <input type="file" id="lotPhotoInput" accept="image/jpeg,image/png,image/webp" onchange="handleLotPhotoSelect(event)">
+            </label>
+            
+            <div id="lotPhotoPreviewBox" style="display: none; margin-top: 8px;">
+              <img id="lotPhotoPreviewImg" class="evidence-preview-img" alt="Evidence Preview">
+              <div style="font-size: 0.78rem; color: var(--muted); margin-top: 4px;">
+                SHA-256: <code id="lotPhotoHashDisplay">Pending upload...</code>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 8px; align-items: center; margin-top: 10px;">
+              <button type="button" class="secondary" style="font-size: 0.82rem; padding: 6px 10px;" onclick="captureBrowserLocation()">
+                📍 Capture Browser Location
+              </button>
+              <span id="geoStatus" style="font-size: 0.78rem; color: var(--muted);">Optional browser geolocation</span>
+            </div>
+            <input type="hidden" name="evidence_id" id="lotEvidenceIdInput">
+          </div>
+
           <button type="submit" class="primary" style="width: 100%;">Record Collection Lot</button>
         </form>
       </section>
 
       <section class="card">
-        <h3>Recent Collection Lots</h3>
-        <p class="card-desc">All recorded lots awaiting aggregation or assigned to batches.</p>
+        <h3>Recorded Collection Lots</h3>
+        <p class="card-desc">All lots currently logged in ledger with batch status and evidence references.</p>
         <div class="table-wrapper">
           <table id="pickerLotsTable">
             <thead>
               <tr>
                 <th>Lot ID</th>
                 <th>Picker</th>
-                <th>Material</th>
+                <th>Polymer</th>
                 <th>Weight (kg)</th>
-                <th>Location</th>
-                <th>Status</th>
+                <th>Evidence</th>
+                <th>Batch Status</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -463,34 +589,79 @@
     </div>
   </div>
 
-  <!-- VIEW 2: AGGREGATOR -->
+  <!-- ================================================================= -->
+  <!-- VIEW 2: AGGREGATOR & CUSTODY HANDOVERS -->
+  <!-- ================================================================= -->
   <div id="view-aggregator" class="tab-content" style="display: none;">
     <div class="grid-2">
+      <!-- Batch Assembly Desk -->
       <section class="card">
-        <h3>Assemble Sealed Batch</h3>
-        <p class="card-desc">Merge unbatched collection lots of identical polymer material into a sealed processing batch.</p>
+        <h3>1 · Assemble Sealed Batch</h3>
+        <p class="card-desc">Group unbatched lots of identical polymer material into a sealed processing batch.</p>
         <form id="batchForm">
-          <div id="unbatchedList" style="margin-bottom: 16px;"></div>
-          <div id="batchSummaryBox" style="background: #f0f7f4; border: 1px solid #d1e7db; padding: 12px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem; display: none;">
+          <div id="unbatchedList" style="margin-bottom: 14px; max-height: 220px; overflow-y: auto;"></div>
+          <div id="batchSummaryBox" style="background: #f0f7f4; border: 1px solid #d1e7db; padding: 12px; border-radius: 8px; margin-bottom: 14px; font-size: 0.88rem; display: none;">
             <div>Selected Lots: <strong id="selectedCount">0</strong></div>
             <div>Combined Input: <strong id="selectedMass">0.000</strong> kg</div>
-            <div>Selected Material: <strong id="selectedMaterial">-</strong></div>
+            <div>Polymer Material: <strong id="selectedMaterial">-</strong></div>
           </div>
           <button type="submit" class="primary" style="width: 100%;">Create Sealed Batch</button>
         </form>
       </section>
 
+      <!-- Feature 2: Custody Handover Recording Desk -->
       <section class="card">
-        <h3>Assembled Batches</h3>
-        <p class="card-desc">Batches created from aggregated lots, ready for recycling facility processing.</p>
+        <h3>2 · Record Chain-of-Custody Handover</h3>
+        <p class="card-desc">Log physical custody transfers between field actors with weight reconciliation checks.</p>
+        <form id="handoverForm" onsubmit="submitHandover(event)">
+          <label>
+            Transfer Stage
+            <select name="stage" required onchange="handleHandoverStageChange(this.value)">
+              <option value="PICKER_TO_AGGREGATOR">Picker → Aggregator (Inward Collection)</option>
+              <option value="AGGREGATOR_TO_RECYCLER">Aggregator → Recycler (Consignment Dispatch)</option>
+            </select>
+          </label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <label>
+              Sender Name / Entity
+              <input name="sender" required placeholder="e.g. Picker P-101">
+            </label>
+            <label>
+              Receiver Name / Entity
+              <input name="receiver" required placeholder="e.g. Kolkata Central Hub">
+            </label>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <label id="handoverTargetLabel">
+              Linked Lot ID (Optional)
+              <input name="lot_id" placeholder="e.g. lot-xxxx">
+            </label>
+            <label>
+              Claimed Transfer Weight (kg)
+              <input name="claimed_weight_kg" type="number" step="0.001" min="0.001" required placeholder="340.000">
+            </label>
+          </div>
+          <label>
+            Handover Dispatch Notes
+            <input name="notes" placeholder="Consignment manifest #, truck #, tare notes">
+          </label>
+          <button type="submit" class="primary" style="width: 100%;">Record Transfer Handover</button>
+        </form>
+      </section>
+
+      <!-- Batches & Handover Log -->
+      <section class="card" style="grid-column: 1 / -1;">
+        <h3>Chain-of-Custody Handovers & Batches</h3>
+        <p class="card-desc">Transfer records with sender, receiver, and weight reconciliation status.</p>
         <div class="table-wrapper">
-          <table id="aggregatorBatchesTable">
+          <table id="handoversTable">
             <thead>
               <tr>
-                <th>Batch ID</th>
-                <th>Material</th>
-                <th>Input Mass</th>
-                <th>Lots Count</th>
+                <th>Handover ID</th>
+                <th>Stage</th>
+                <th>Sender → Receiver</th>
+                <th>Claimed Weight</th>
+                <th>Reconciliation</th>
                 <th>Status</th>
                 <th>Action</th>
               </tr>
@@ -502,97 +673,236 @@
     </div>
   </div>
 
-  <!-- VIEW 3: RECYCLER -->
+  <!-- ================================================================= -->
+  <!-- VIEW 3: RECYCLER PROCESSING -->
+  <!-- ================================================================= -->
   <div id="view-recycler" class="tab-content" style="display: none;">
     <div class="grid-1">
       <section class="card">
-        <h3>Recycling Facility Processing & Mass-Balance Desk</h3>
+        <h3>Report Recycler Output & Mass Balance Verification</h3>
         <p class="card-desc">
-          Enter verified recycled output (pellets/flakes). Mass balance strictly enforces that <strong>output cannot exceed input</strong>. Excess output claims will be deterministically rejected and logged.
+          Enter reported recycled output (pellets/flakes). Mass balance deterministically validates that <strong>output cannot exceed recorded input</strong>. Excess output claims will be blocked, logged, and routed as flagged discrepancies.
         </p>
         <div id="recyclerBatchesList"></div>
       </section>
     </div>
   </div>
 
-  <!-- VIEW 4: BRAND & AUDIT -->
-  <div id="view-brand" class="tab-content" style="display: none;">
+  <!-- ================================================================= -->
+  <!-- VIEW 4: AUDITOR REVIEW QUEUE -->
+  <!-- ================================================================= -->
+  <div id="view-auditor" class="tab-content" style="display: none;">
     <div class="grid-1">
       <section class="card">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
           <div>
-            <h3>Brand & Compliance Lineage Inspector</h3>
-            <p class="card-desc">Inspect chain-of-custody lineage for any batch and export supporting audit packs.</p>
+            <h3>Auditor Review Case Queue</h3>
+            <p class="card-desc">Investigate flagged discrepancies, inspect mathematical calculations, and log formal audit review decisions.</p>
           </div>
-          <div style="display: flex; gap: 10px; align-items: center;">
-            <select id="lineageBatchSelect" style="width: auto; min-width: 200px; margin: 0;" onchange="loadLineage(this.value)">
-              <option value="">Select a batch to inspect...</option>
-            </select>
-            <button class="secondary" onclick="downloadCurrentAuditPack()" id="downloadAuditBtn" disabled>Download Audit Pack (JSON)</button>
+          <div style="background: #fff8e1; border: 1px solid #ffe082; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; color: #6d4c41;">
+            Demo review workflow · Reviewer name is self-entered
           </div>
         </div>
 
-        <div id="lineageDrillDownView" style="display: none;">
-          <div class="lineage-container">
-            <h4 style="font-size: 0.95rem; margin-bottom: 12px; color: var(--primary-dark);">
-              Recorded Chain of Custody Stages for Batch <span id="lineageBatchIdDisplay"></span>
+        <div id="auditorFindingsList" style="margin-top: 10px;"></div>
+      </section>
+
+      <!-- Auditor Decision Modal/Panel -->
+      <section class="card" id="auditorDecisionCard" style="display: none;">
+        <h4 style="font-size: 1.1rem; color: var(--primary-dark); margin-bottom: 8px;">
+          Record Audit Decision for Case <span id="auditCaseTargetId"></span>
+        </h4>
+        <form onsubmit="submitAuditorReview(event)">
+          <input type="hidden" id="auditTargetType" value="BATCH">
+          <input type="hidden" id="auditTargetId">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <label>
+              Audit Review Decision
+              <select id="auditDecisionStatus" required>
+                <option value="NEEDS_FIELD_CHECK">Needs Field Check (Requires physical scale inspection)</option>
+                <option value="RESOLVED">Resolved (Discrepancy justified with calibration note)</option>
+                <option value="REJECTED">Rejected (Discrepancy confirmed invalid; claim voided)</option>
+                <option value="OPEN">Open (Under Investigation)</option>
+              </select>
+            </label>
+            <label>
+              Reviewer Name <span class="evidence-badge">Self-Entered</span>
+              <input id="auditReviewerName" required placeholder="e.g. Lead Auditor Sharma">
+            </label>
+          </div>
+          <label>
+            Mandatory Audit Findings & Rationale
+            <textarea id="auditReviewReason" required rows="3" placeholder="Provide detailed explanation of scale verification, tare discrepancy, or field check results..."></textarea>
+          </label>
+          <div style="display: flex; gap: 10px;">
+            <button type="submit" class="primary">Record Audit Decision</button>
+            <button type="button" class="secondary" onclick="$('auditorDecisionCard').style.display='none'">Cancel</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- VIEW 5: LINEAGE DRILL-DOWN & AUDIT PACK -->
+  <!-- ================================================================= -->
+  <div id="view-brand" class="tab-content" style="display: none;">
+    <div class="grid-1">
+      <section class="card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3>Chain of Custody Lineage Inspector</h3>
+            <p class="card-desc">Inspect recorded collection lots, aggregator batches, recycler outputs, and custody handovers.</p>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <select id="lineageBatchSelect" style="width: auto; min-width: 220px; margin: 0;" onchange="loadLineage(this.value)">
+              <option value="">Select a batch to inspect...</option>
+            </select>
+            <button class="secondary" onclick="downloadCurrentAuditPack()" id="downloadAuditBtn" disabled>
+              📥 Download Audit Pack (JSON)
+            </button>
+          </div>
+        </div>
+
+        <div id="lineageDrillDownView" style="display: none; margin-top: 18px;">
+          <div style="background: #f8faf8; border: 1px solid var(--border); border-radius: 10px; padding: 20px;">
+            <h4 style="font-size: 1.05rem; margin-bottom: 14px; color: var(--primary-dark);">
+              Recorded Stages for Batch <span id="lineageBatchIdDisplay"></span>
             </h4>
-            
-            <!-- Recorded Stages Only: Collection Lots -> Aggregator Batch -> Recycler Output -->
+
+            <!-- Recorded Stages: Collection Lots -> Aggregator Batch -> Recycler Output -->
             <div class="lineage-stages">
-              
-              <!-- STAGE 1: COLLECTION LOTS -->
+              <!-- STAGE 1 -->
               <div class="lineage-step">
-                <div class="lineage-step-header">
+                <div style="display: flex; justify-content: space-between; font-size: 0.76rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">
                   <span>Stage 1</span>
-                  <span class="self-reported-badge">Self-Reported Claims</span>
+                  <span class="evidence-badge">Submitted Evidence</span>
                 </div>
-                <div class="lineage-step-title">Collection Lots</div>
-                <div class="lineage-step-content" id="lineageStageLots"></div>
+                <div style="font-size: 1.05rem; font-weight: 750; margin: 6px 0;">Collection Lots</div>
+                <div id="lineageStageLots" style="flex-grow: 1;"></div>
               </div>
 
               <div class="lineage-arrow">→</div>
 
-              <!-- STAGE 2: AGGREGATOR BATCH -->
+              <!-- STAGE 2 -->
               <div class="lineage-step">
-                <div class="lineage-step-header">
+                <div style="display: flex; justify-content: space-between; font-size: 0.76rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">
                   <span>Stage 2</span>
-                  <span>Ledger Recorded</span>
+                  <span>Ledger Sealed</span>
                 </div>
-                <div class="lineage-step-title">Aggregator Batch</div>
-                <div class="lineage-step-content" id="lineageStageBatch"></div>
+                <div style="font-size: 1.05rem; font-weight: 750; margin: 6px 0;">Aggregator Batch</div>
+                <div id="lineageStageBatch" style="flex-grow: 1;"></div>
               </div>
 
               <div class="lineage-arrow">→</div>
 
-              <!-- STAGE 3: RECYCLER OUTPUT -->
+              <!-- STAGE 3 -->
               <div class="lineage-step">
-                <div class="lineage-step-header">
+                <div style="display: flex; justify-content: space-between; font-size: 0.76rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">
                   <span>Stage 3</span>
-                  <span id="lineageStageOutputBadge">Output Status</span>
+                  <span id="lineageStageOutputBadge">Status</span>
                 </div>
-                <div class="lineage-step-title">Recycler Output</div>
-                <div class="lineage-step-content" id="lineageStageOutput"></div>
+                <div style="font-size: 1.05rem; font-weight: 750; margin: 6px 0;">Recycler Output</div>
+                <div id="lineageStageOutput" style="flex-grow: 1;"></div>
               </div>
+            </div>
 
+            <!-- Custody Handovers linked to batch -->
+            <div style="margin-top: 18px; border-top: 1px solid var(--border); padding-top: 14px;">
+              <h5 style="font-size: 0.92rem; font-weight: 700; margin-bottom: 8px;">Custody Transfer Handover History:</h5>
+              <div id="lineageHandoversList"></div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- AUDIT EVENT TRAIL -->
+      <!-- Recorded Event Trail -->
       <section class="card">
-        <h3>Immutable Audit Event Trail</h3>
-        <p class="card-desc">Chronological trail of all ledger events, including mass-balance rejection attempts.</p>
+        <h3>Recorded Event Trail</h3>
+        <p class="card-desc">Chronological trail of ledger events, transfer handovers, and flagged discrepancy attempts.</p>
         <ul id="eventTrailList" class="event-list"></ul>
       </section>
     </div>
   </div>
 
+  <!-- ================================================================= -->
+  <!-- VIEW 6: PICKER INCOME & MATERIAL FLOW INSIGHTS -->
+  <!-- ================================================================= -->
+  <div id="view-insights" class="tab-content" style="display: none;">
+    <div class="grid-1">
+      <!-- KPI Stats -->
+      <div class="grid-3">
+        <div class="stat-card">
+          <div class="stat-label">Total Recorded Input</div>
+          <div class="stat-value" id="kpiInputKg">0.000 kg</div>
+          <div class="stat-hint">Aggregated from collection lots</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Reported Recycler Output</div>
+          <div class="stat-value" id="kpiOutputKg">0.000 kg</div>
+          <div class="stat-hint">Processed flake/pellet output</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label" style="color: #b71c1c;">Flagged Discrepancy Mass</div>
+          <div class="stat-value" id="kpiDiscrepancyKg" style="color: #c62828;">0.000 kg</div>
+          <div class="stat-hint">Blocked excess claims requiring audit</div>
+        </div>
+      </div>
+
+      <!-- Picker Income Table -->
+      <section class="card">
+        <h3>Waste Picker Collection & Reported Transaction Value</h3>
+        <p class="card-desc">
+          Calculated transaction values based on recorded collection weights and field rates.
+          <strong style="color: #e65100;">Notice: Reported transaction value reflects claimed collection rates; unconfirmed payment (no banking or UPI integration).</strong>
+        </p>
+        <div class="table-wrapper">
+          <table id="pickerEconomicsTable">
+            <thead>
+              <tr>
+                <th>Picker ID</th>
+                <th>Lots Count</th>
+                <th>Total Collected Weight</th>
+                <th>Polymer Breakdown</th>
+                <th>Reported Transaction Value (INR)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Polymer Material Flow Summary -->
+      <section class="card">
+        <h3>Polymer Material Flow Reconciliation</h3>
+        <p class="card-desc">
+          Material balance breakdown by polymer type. Internal mass-balance tallies; not officially certified recycling figures or carbon impact claims.
+        </p>
+        <div class="table-wrapper">
+          <table id="polymerFlowTable">
+            <thead>
+              <tr>
+                <th>Polymer Type</th>
+                <th>Batches Count</th>
+                <th>Recorded Input (kg)</th>
+                <th>Reported Output (kg)</th>
+                <th>Average Yield (%)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- SCRIPT -->
   <script>
     const $ = id => document.getElementById(id);
-    let state = { lots: [], batches: [], events: [] };
+    let state = { lots: [], batches: [], events: [], handovers: [], reviews: [], evidence: [] };
+    let insights = { picker_economics: { pickers: [] }, material_flow: { polymers: {} } };
     let activeBatchIdForLineage = null;
+    let selectedGeo = null;
 
     function safe(s) {
       return String(s ?? "").replace(/[&<>"']/g, c => ({
@@ -633,58 +943,128 @@
     async function refresh() {
       try {
         state = await api("state");
+        insights = await api("insights").catch(() => insights);
         renderPickerView();
         renderAggregatorView();
         renderRecyclerView();
+        renderAuditorView();
         renderBrandView();
+        renderInsightsView();
         renderEventTrail();
         if (activeBatchIdForLineage) {
           loadLineage(activeBatchIdForLineage);
         }
       } catch (err) {
-        note("Failed to load state: " + err.message, "error");
+        note("Failed to load ledger state: " + err.message, "error");
       }
     }
 
-    /* 1. PICKER VIEW */
-    function renderPickerView() {
-      const tbody = $("pickerLotsTable").querySelector("tbody");
-      if (!state.lots.length) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--muted); padding: 20px;">No collection lots recorded yet.</td></tr>';
+    /* -------------------------------------------------------------
+       1. PICKER VIEW & EVIDENCE CAPTURE
+    ------------------------------------------------------------- */
+    function captureBrowserLocation() {
+      if (!navigator.geolocation) {
+        $("geoStatus").textContent = "Geolocation not supported by browser";
         return;
       }
-      tbody.innerHTML = state.lots.slice().reverse().map(l => {
-        const status = l.batch_id 
-          ? `<span class="pill pill-batched">Batched (${safe(l.batch_id)})</span>`
-          : `<span class="pill pill-unbatched">Unbatched</span>`;
-        return `
-          <tr>
-            <td><code>${safe(l.id)}</code></td>
-            <td><strong>${safe(l.picker)}</strong></td>
-            <td>${safe(l.material)}</td>
-            <td><strong>${safe(l.weight_kg)}</strong> kg</td>
-            <td><small>${safe(l.location)}</small></td>
-            <td>${status}</td>
-          </tr>
-        `;
-      }).join("");
+      $("geoStatus").textContent = "Requesting permission...";
+      navigator.geolocation.getCurrentPosition(pos => {
+        selectedGeo = {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy_m: pos.coords.accuracy,
+          captured_at: new Date().toISOString()
+        };
+        $("geoStatus").textContent = `📍 Captured: ${selectedGeo.latitude.toFixed(4)}, ${selectedGeo.longitude.toFixed(4)} (±${pos.coords.accuracy.toFixed(1)}m)`;
+      }, err => {
+        $("geoStatus").textContent = "Location access denied / unavailable";
+        selectedGeo = null;
+      }, { timeout: 10000, enableHighAccuracy: true });
+    }
+
+    async function handleLotPhotoSelect(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) {
+        note("File exceeds 5 MB limit", "error");
+        e.target.value = "";
+        return;
+      }
+      // Instant client-side preview
+      const previewImg = $("lotPhotoPreviewImg");
+      previewImg.src = URL.createObjectURL(file);
+      $("lotPhotoPreviewBox").style.display = "block";
+      $("lotPhotoHashDisplay").textContent = "Uploading & computing SHA-256...";
+
+      try {
+        const formData = new FormData();
+        formData.append("photo", file);
+        if (selectedGeo) {
+          formData.append("latitude", selectedGeo.latitude);
+          formData.append("longitude", selectedGeo.longitude);
+          formData.append("accuracy_m", selectedGeo.accuracy_m);
+        }
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+        const uploaded = await res.json();
+        if (!res.ok) throw new Error(uploaded.error || "Upload failed");
+
+        $("lotEvidenceIdInput").value = uploaded.id;
+        $("lotPhotoHashDisplay").textContent = uploaded.sha256;
+        note(`Evidence photo uploaded. SHA-256: ${uploaded.sha256.slice(0, 16)}...`, "ok");
+      } catch (err) {
+        $("lotPhotoHashDisplay").textContent = "Upload failed: " + err.message;
+        note(err.message, "error");
+      }
     }
 
     $("lotForm").onsubmit = async (e) => {
       e.preventDefault();
       try {
-        const formData = new FormData(e.target);
-        const payload = Object.fromEntries(formData);
-        const created = await api("lots", "POST", payload);
-        note(`Collection Lot ${created.id} recorded (${created.weight_kg} kg ${created.material})`, "ok");
+        const payload = Object.fromEntries(new FormData(e.target));
+        const res = await api("lots", "POST", payload);
+        note(`Collection Lot ${res.id} recorded (${res.weight_kg} kg ${res.material})`, "ok");
         e.target.reset();
+        $("lotPhotoPreviewBox").style.display = "none";
+        $("lotEvidenceIdInput").value = "";
+        selectedGeo = null;
+        $("geoStatus").textContent = "Optional browser geolocation";
         await refresh();
       } catch (err) {
         note(err.message, "error");
       }
     };
 
-    /* 2. AGGREGATOR VIEW */
+    function renderPickerView() {
+      const tbody = $("pickerLotsTable").querySelector("tbody");
+      if (!state.lots.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--muted); padding: 18px;">No collection lots recorded yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = state.lots.slice().reverse().map(l => {
+        const status = l.batch_id
+          ? `<span class="pill pill-batched">Batched (${safe(l.batch_id)})</span>`
+          : `<span class="pill pill-unbatched">Unbatched</span>`;
+        const ev = state.evidence.find(e => e.id === l.evidence_id);
+        const evDisplay = ev 
+          ? `<a href="${safe(ev.url)}" target="_blank" style="font-size: 0.78rem;">📷 View (${safe(ev.sha256.slice(0, 8))}...)</a>`
+          : (l.photo_ref ? `<span style="font-size: 0.78rem; color: var(--muted);">${safe(l.photo_ref)}</span>` : '<span style="color: var(--muted);">None</span>');
+
+        return `
+          <tr>
+            <td><code>${safe(l.id)}</code></td>
+            <td><strong>${safe(l.picker)}</strong></td>
+            <td>${safe(l.material)}</td>
+            <td><strong>${safe(l.weight_kg)}</strong> kg</td>
+            <td>${evDisplay}</td>
+            <td>${status}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    /* -------------------------------------------------------------
+       2. AGGREGATOR VIEW & CUSTODY HANDOVERS
+    ------------------------------------------------------------- */
     function renderAggregatorView() {
       const unbatched = state.lots.filter(l => !l.batch_id);
       const container = $("unbatchedList");
@@ -703,24 +1083,36 @@
       }
       updateBatchSummary();
 
-      // Batches Table
-      const batchesTbody = $("aggregatorBatchesTable").querySelector("tbody");
-      if (!state.batches.length) {
-        batchesTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--muted); padding: 20px;">No batches created yet.</td></tr>';
+      // Handovers Table
+      const hoTbody = $("handoversTable").querySelector("tbody");
+      if (!state.handovers.length) {
+        hoTbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--muted); padding: 18px;">No transfer handovers recorded yet.</td></tr>';
         return;
       }
-      batchesTbody.innerHTML = state.batches.slice().reverse().map(b => {
-        const status = b.output_kg !== null
-          ? `<span class="pill pill-processed">Processed (${safe(b.output_kg)} kg)</span>`
-          : `<span class="pill pill-pending">Pending Recycler</span>`;
+      hoTbody.innerHTML = state.handovers.slice().reverse().map(h => {
+        let recBadge = '<span class="pill pill-batched">Direct</span>';
+        if (h.reconciliation) {
+          const status = h.reconciliation.status;
+          if (status === "MATCH") recBadge = '<span class="pill pill-processed">Match (±0 kg)</span>';
+          else if (status === "LOSS") recBadge = `<span class="pill pill-discrepancy">Loss (${safe(h.reconciliation.delta_kg)} kg)</span>`;
+          else if (status === "INCREASE") recBadge = `<span class="pill pill-review">Increase (${safe(h.reconciliation.delta_kg)} kg)</span>`;
+        }
+        const ackStatus = h.acknowledgement_status === "ACKNOWLEDGED"
+          ? `<span class="pill pill-processed">✓ Acknowledged (${safe(h.acknowledged_by)})</span>`
+          : `<span class="pill pill-pending">Pending Acknowledgement</span>`;
+
+        const canAck = h.acknowledgement_status === "PENDING";
         return `
           <tr>
-            <td><code>${safe(b.id)}</code></td>
-            <td>${safe(b.material)}</td>
-            <td><strong>${safe(b.input_kg)}</strong> kg</td>
-            <td>${b.lot_ids.length} lots</td>
-            <td>${status}</td>
-            <td><button class="secondary" style="padding: 4px 10px; font-size: 0.8rem;" onclick="inspectBatch('${safe(b.id)}')">Lineage →</button></td>
+            <td><code>${safe(h.id)}</code></td>
+            <td><small>${safe(h.stage)}</small></td>
+            <td><strong>${safe(h.sender)}</strong> → <strong>${safe(h.receiver)}</strong></td>
+            <td><strong>${safe(h.claimed_weight_kg)}</strong> kg</td>
+            <td>${recBadge}</td>
+            <td>${ackStatus}</td>
+            <td>
+              ${canAck ? `<button class="secondary" style="padding: 4px 8px; font-size: 0.78rem;" onclick="promptAcknowledgeHandover('${safe(h.id)}')">Acknowledge</button>` : '-'}
+            </td>
           </tr>
         `;
       }).join("");
@@ -734,14 +1126,13 @@
         return;
       }
       summaryBox.style.display = "block";
-      const count = checked.length;
       let total = 0;
       const materials = new Set();
       checked.forEach(cb => {
         total += parseFloat(cb.dataset.weight || "0");
         materials.add(cb.dataset.material);
       });
-      $("selectedCount").textContent = count;
+      $("selectedCount").textContent = checked.length;
       $("selectedMass").textContent = total.toFixed(3);
       if (materials.size === 1) {
         $("selectedMaterial").textContent = [...materials][0];
@@ -756,18 +1147,56 @@
       e.preventDefault();
       try {
         const checked = [...document.querySelectorAll('input[name="batchLot"]:checked')].map(cb => cb.value);
-        if (!checked.length) {
-          throw new Error("Select at least one lot to create a batch");
-        }
-        const created = await api("batches", "POST", { lot_ids: checked });
-        note(`Batch ${created.id} assembled with ${created.input_kg} kg ${created.material}`, "ok");
+        if (!checked.length) throw new Error("Select at least one lot to create a batch");
+        const res = await api("batches", "POST", { lot_ids: checked });
+        note(`Batch ${res.id} assembled with ${res.input_kg} kg ${res.material}`, "ok");
         await refresh();
       } catch (err) {
         note(err.message, "error");
       }
     };
 
-    /* 3. RECYCLER VIEW */
+    function handleHandoverStageChange(val) {
+      const label = $("handoverTargetLabel");
+      if (val === "PICKER_TO_AGGREGATOR") {
+        label.innerHTML = 'Linked Lot ID (Optional)<input name="lot_id" placeholder="e.g. lot-xxxx">';
+      } else {
+        label.innerHTML = 'Linked Batch ID (Optional)<input name="batch_id" placeholder="e.g. batch-xxxx">';
+      }
+    }
+
+    async function submitHandover(e) {
+      e.preventDefault();
+      try {
+        const payload = Object.fromEntries(new FormData(e.target));
+        const res = await api("handovers", "POST", payload);
+        note(`Handover ${res.id} recorded (${res.claimed_weight_kg} kg)`, "ok");
+        e.target.reset();
+        await refresh();
+      } catch (err) {
+        note(err.message, "error");
+      }
+    }
+
+    async function promptAcknowledgeHandover(hoId) {
+      const name = prompt("Enter receiver acknowledgement name (self-entered demo receipt):", "Receiving Lead");
+      if (!name) return;
+      try {
+        await api("handovers/acknowledge", "POST", {
+          handover_id: hoId,
+          status: "ACKNOWLEDGED",
+          acknowledged_by: name
+        });
+        note(`Handover ${hoId} acknowledged by ${name}`, "ok");
+        await refresh();
+      } catch (err) {
+        note(err.message, "error");
+      }
+    }
+
+    /* -------------------------------------------------------------
+       3. RECYCLER PROCESSING DESK
+    ------------------------------------------------------------- */
     function renderRecyclerView() {
       const container = $("recyclerBatchesList");
       if (!state.batches.length) {
@@ -782,12 +1211,12 @@
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
               <div>
                 <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--primary);">Batch ${safe(b.id)}</span>
-                <h4 style="font-size: 1.1rem; margin: 2px 0;">${safe(b.material)} · Recorded Input: <strong>${safe(b.input_kg)} kg</strong></h4>
+                <h4 style="font-size: 1.15rem; margin: 2px 0;">${safe(b.material)} · Recorded Input: <strong>${safe(b.input_kg)} kg</strong></h4>
                 <small style="color: var(--muted);">${b.lot_ids.length} source lots (${b.lot_ids.map(safe).join(", ")})</small>
               </div>
               <div>
                 ${isProcessed
-                  ? `<span class="pill pill-processed">Output Recorded: ${safe(b.output_kg)} kg (${safe(b.yield_pct)}% Yield)</span>`
+                  ? `<span class="pill pill-processed">Reported Output: ${safe(b.output_kg)} kg (${safe(b.yield_pct)}% Yield)</span>`
                   : `<span class="pill pill-pending">Pending Recycler Output</span>`}
               </div>
             </div>
@@ -797,27 +1226,25 @@
                 <form onsubmit="submitRecyclerOutput(event, '${safe(b.id)}')">
                   <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 220px;">
-                      <label style="margin: 0; font-size: 0.82rem;">
-                        Recycled Output Claim (kg):
+                      <label style="margin: 0; font-size: 0.84rem;">
+                        Reported Recycled Output (kg):
                         <input id="input_output_${safe(b.id)}" type="number" step="0.001" min="0.001" required placeholder="Output weight in kg">
                       </label>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: flex-end; padding-top: 16px;">
-                      <button type="button" class="fraud-trigger" onclick="setFraudValue('${safe(b.id)}')">⚠️ Claim 500 kg (Fraud Test)</button>
-                      <button type="button" class="legit-trigger" onclick="setLegitValue('${safe(b.id)}', '${safe(b.input_kg)}')">✅ Claim Valid 90% Yield</button>
-                      <button type="submit" class="primary" style="padding: 10px 16px;">Submit Output</button>
+                      <button type="button" class="danger" onclick="setFraudValue('${safe(b.id)}')">⚠️ Claim 500 kg (Discrepancy Test)</button>
+                      <button type="button" class="success" onclick="setLegitValue('${safe(b.id)}', '${safe(b.input_kg)}')">✅ Report Valid 90% Yield</button>
+                      <button type="submit" class="primary" style="padding: 10px 16px;">Submit Output Claim</button>
                     </div>
                   </div>
                   <small style="display: block; color: var(--muted); margin-top: 6px;">
-                    Mass balance rule: Output mass cannot exceed recorded input mass of ${safe(b.input_kg)} kg.
+                    Mass-balance rule: Output mass cannot exceed recorded input mass of ${safe(b.input_kg)} kg.
                   </small>
                 </form>
               </div>
             ` : `
               <div style="display: flex; justify-content: space-between; align-items: center; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px 14px; border-radius: 8px; margin-top: 8px; font-size: 0.86rem;">
-                <div>
-                  Processing completed at: <strong>${safe(b.processed_at || b.created_at)}</strong> · Yield: <strong>${safe(b.yield_pct)}%</strong>
-                </div>
+                <div>Processing recorded at: <strong>${safe(b.processed_at || b.created_at)}</strong> · Yield: <strong>${safe(b.yield_pct)}%</strong></div>
                 <button class="secondary" onclick="inspectBatch('${safe(b.id)}')">View Lineage & Audit Pack →</button>
               </div>
             `}
@@ -846,18 +1273,86 @@
         note(`Output of ${res.output_kg} kg confirmed for Batch ${batchId} (${res.yield_pct}% yield).`, "ok");
         await refresh();
       } catch (err) {
-        note(err.message, "error");
-        await refresh(); // Refresh so the OUTPUT_REJECTED event shows up in the event trail!
+        note("Flagged Discrepancy: " + err.message, "error");
+        await refresh();
       }
     }
 
-    /* 4. BRAND & AUDIT VIEW */
+    /* -------------------------------------------------------------
+       4. AUDITOR CASE QUEUE & FINDINGS
+    ------------------------------------------------------------- */
+    async function renderAuditorView() {
+      try {
+        const discData = await api("discrepancies");
+        const container = $("auditorFindingsList");
+        if (!discData.findings.length) {
+          container.innerHTML = '<p style="color: var(--muted); font-size: 0.9rem; padding: 14px;">✓ Zero discrepancies detected across recorded batches and lots.</p>';
+          return;
+        }
+
+        container.innerHTML = discData.findings.map(f => {
+          const isHigh = f.severity === "HIGH";
+          return `
+            <div class="finding-card">
+              <div class="finding-title">
+                <span>[${safe(f.rule_id)}] ${safe(f.rule_name)}</span>
+                <span class="pill ${isHigh ? 'pill-discrepancy' : 'pill-review'}">${safe(f.severity)} SEVERITY</span>
+              </div>
+              <p style="font-size: 0.88rem; margin: 4px 0;"><strong>Finding:</strong> ${safe(f.finding)}</p>
+              <div class="finding-calc">Calculation: ${safe(f.calculation)}</div>
+              <div class="finding-human">
+                <strong>Recommended Human Check:</strong> ${safe(f.recommended_human_check)}
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                <span style="font-size: 0.78rem; color: var(--muted);">Target: ${safe(f.affected_entity.type)} <code>${safe(f.affected_entity.id)}</code></span>
+                <button class="primary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="openAuditDecision('${safe(f.affected_entity.type)}', '${safe(f.affected_entity.id)}')">
+                  Record Audit Decision →
+                </button>
+              </div>
+            </div>
+          `;
+        }).join("");
+      } catch (err) {
+        $("auditorFindingsList").innerHTML = `<p style="color: var(--warn-text);">Error loading findings: ${safe(err.message)}</p>`;
+      }
+    }
+
+    function openAuditDecision(targetType, targetId) {
+      $("auditTargetType").value = targetType;
+      $("auditTargetId").value = targetId;
+      $("auditCaseTargetId").textContent = `${targetType} ${targetId}`;
+      $("auditorDecisionCard").style.display = "block";
+      $("auditorDecisionCard").scrollIntoView({ behavior: "smooth" });
+    }
+
+    async function submitAuditorReview(e) {
+      e.preventDefault();
+      try {
+        const payload = {
+          target_type: $("auditTargetType").value,
+          target_id: $("auditTargetId").value,
+          status: $("auditDecisionStatus").value,
+          reviewer_name: $("auditReviewerName").value,
+          reason: $("auditReviewReason").value
+        };
+        const res = await api("reviews", "POST", payload);
+        note(`Audit decision recorded: ${res.status} for ${res.target_type} ${res.target_id}`, "ok");
+        $("auditorDecisionCard").style.display = "none";
+        await refresh();
+      } catch (err) {
+        note(err.message, "error");
+      }
+    }
+
+    /* -------------------------------------------------------------
+       5. LINEAGE DRILL-DOWN & AUDIT PACK
+    ------------------------------------------------------------- */
     function renderBrandView() {
       const select = $("lineageBatchSelect");
       const currentVal = select.value;
       select.innerHTML = '<option value="">Select a batch to inspect...</option>' + 
         state.batches.slice().reverse().map(b => {
-          const demoTag = b.is_demo ? " [Sankalp Demo 340kg]" : "";
+          const demoTag = b.is_demo ? " [Sankalp Demo]" : "";
           const status = b.output_kg ? ` (${b.output_kg} kg output)` : " (pending)";
           return `<option value="${safe(b.id)}">Batch ${safe(b.id)} - ${safe(b.input_kg)} kg ${safe(b.material)}${status}${demoTag}</option>`;
         }).join("");
@@ -892,27 +1387,29 @@
         $("lineageBatchIdDisplay").textContent = detail.batch.id;
 
         // Stage 1: Collection Lots
-        const lotsContainer = $("lineageStageLots");
-        lotsContainer.innerHTML = detail.source_lots.map(l => `
-          <div class="lot-chip">
-            <div style="display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 2px;">
-              <span><code>${safe(l.id)}</code> · ${safe(l.picker)}</span>
-              <span>${safe(l.weight_kg)} kg</span>
+        $("lineageStageLots").innerHTML = detail.source_lots.map(l => {
+          const ev = detail.evidence.find(e => e.id === l.evidence_id);
+          return `
+            <div style="background: #f0f7f3; border: 1px solid #d5e6db; border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; font-size: 0.82rem;">
+              <div style="display: flex; justify-content: space-between; font-weight: 700;">
+                <span><code>${safe(l.id)}</code> · ${safe(l.picker)}</span>
+                <span>${safe(l.weight_kg)} kg</span>
+              </div>
+              <div style="font-size: 0.74rem; color: var(--muted); margin-top: 3px;">
+                Location: ${safe(l.location)}<br>
+                ${ev ? `Photo SHA: <code>${safe(ev.sha256.slice(0, 10))}...</code>` : 'Photo: None'}
+              </div>
             </div>
-            <div style="font-size: 0.74rem; color: var(--muted);">
-              Location (Self-reported): ${safe(l.location)}<br>
-              Photo Ref (Unverified): ${safe(l.photo_ref || "None")}
-            </div>
-          </div>
-        `).join("");
+          `;
+        }).join("");
 
         // Stage 2: Aggregator Batch
         const b = detail.batch;
         $("lineageStageBatch").innerHTML = `
-          <div style="background: #f8faf9; border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
-            <div style="margin-bottom: 6px;">Batch ID: <code>${safe(b.id)}</code></div>
-            <div style="margin-bottom: 6px;">Polymer: <strong>${safe(b.material)}</strong></div>
-            <div style="margin-bottom: 6px;">Total Input: <strong>${safe(b.input_kg)} kg</strong></div>
+          <div style="background: #f8faf9; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 0.84rem;">
+            <div style="margin-bottom: 4px;">Batch ID: <code>${safe(b.id)}</code></div>
+            <div style="margin-bottom: 4px;">Polymer: <strong>${safe(b.material)}</strong></div>
+            <div style="margin-bottom: 4px;">Recorded Input: <strong>${safe(b.input_kg)} kg</strong></div>
             <div style="font-size: 0.76rem; color: var(--muted);">Created: ${safe(b.created_at)}</div>
           </div>
         `;
@@ -922,31 +1419,42 @@
         const outputBadge = $("lineageStageOutputBadge");
         if (b.output_kg !== null) {
           outputBadge.className = "pill pill-processed";
-          outputBadge.textContent = "Verified Output";
+          outputBadge.textContent = "Reported Output";
           outputContainer.innerHTML = `
-            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px;">
-              <div style="margin-bottom: 6px;">Recycled Output: <strong>${safe(b.output_kg)} kg</strong></div>
-              <div style="margin-bottom: 6px;">Processing Yield: <strong>${safe(b.yield_pct)}%</strong></div>
-              <div style="font-size: 0.76rem; color: var(--muted);">Processed: ${safe(b.processed_at || b.created_at)}</div>
-              <div style="font-size: 0.76rem; color: #15803d; font-weight: 600; margin-top: 6px;">✓ Mass Balance Check Passed</div>
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; font-size: 0.84rem;">
+              <div style="margin-bottom: 4px;">Recycled Output: <strong>${safe(b.output_kg)} kg</strong></div>
+              <div style="margin-bottom: 4px;">Yield: <strong>${safe(b.yield_pct)}%</strong></div>
+              <div style="font-size: 0.76rem; color: #15803d; font-weight: 600; margin-top: 4px;">✓ Mass Balance Check Passed</div>
             </div>
           `;
         } else {
-          // Check if there was any rejected attempt for this batch
           const rejectedAttempt = detail.events.find(e => e.kind === "OUTPUT_REJECTED");
-          outputBadge.className = rejectedAttempt ? "pill pill-rejected" : "pill pill-pending";
-          outputBadge.textContent = rejectedAttempt ? "Fraud Attempt Logged" : "Pending Processing";
+          outputBadge.className = rejectedAttempt ? "pill pill-discrepancy" : "pill pill-pending";
+          outputBadge.textContent = rejectedAttempt ? "Discrepancy Flagged" : "Pending Processing";
           outputContainer.innerHTML = `
-            <div style="background: ${rejectedAttempt ? "#fff5f5" : "#fffbeb"}; border: 1px solid ${rejectedAttempt ? "#fed7d7" : "#fef3c7"}; border-radius: 8px; padding: 12px;">
-              <div style="font-weight: 600; color: ${rejectedAttempt ? "#c53030" : "#b45309"}; margin-bottom: 4px;">
-                ${rejectedAttempt ? "Output Claim Rejected" : "No Output Recorded Yet"}
+            <div style="background: ${rejectedAttempt ? "#fff5f5" : "#fffbeb"}; border: 1px solid ${rejectedAttempt ? "#fed7d7" : "#fef3c7"}; border-radius: 8px; padding: 12px; font-size: 0.84rem;">
+              <div style="font-weight: 700; color: ${rejectedAttempt ? "#c53030" : "#b45309"}; margin-bottom: 4px;">
+                ${rejectedAttempt ? "Discrepancy Flagged" : "No Output Reported Yet"}
               </div>
-              <p style="font-size: 0.78rem; color: var(--muted); margin-bottom: 8px;">
+              <p style="font-size: 0.78rem; color: var(--muted); margin-bottom: 6px;">
                 ${rejectedAttempt ? safe(rejectedAttempt.reason) : "Awaiting processing record from recycler."}
               </p>
-              <button class="secondary" style="font-size: 0.78rem; padding: 4px 8px;" onclick="setTab('recycler')">Go to Recycler View →</button>
+              <button class="secondary" style="font-size: 0.78rem; padding: 3px 6px;" onclick="setTab('recycler')">Go to Recycler View →</button>
             </div>
           `;
+        }
+
+        // Handovers
+        const hoContainer = $("lineageHandoversList");
+        if (!detail.handovers.length) {
+          hoContainer.innerHTML = '<span style="color: var(--muted); font-size: 0.82rem;">No handover transfers logged for this batch.</span>';
+        } else {
+          hoContainer.innerHTML = detail.handovers.map(h => `
+            <div style="background: white; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; margin-bottom: 6px; font-size: 0.82rem; display: flex; justify-content: space-between;">
+              <span><strong>${safe(h.sender)}</strong> → <strong>${safe(h.receiver)}</strong> (${safe(h.claimed_weight_kg)} kg)</span>
+              <span>${safe(h.acknowledgement_status)}</span>
+            </div>
+          `).join("");
         }
 
       } catch (err) {
@@ -960,63 +1468,158 @@
       }
     }
 
-    /* 5. EVENT TRAIL */
+    /* -------------------------------------------------------------
+       6. INSIGHTS & ECONOMICS
+    ------------------------------------------------------------- */
+    function renderInsightsView() {
+      if (!insights) return;
+      const mf = insights.material_flow || {};
+      $("kpiInputKg").textContent = (mf.total_input_kg || "0.000") + " kg";
+      $("kpiOutputKg").textContent = (mf.reported_output_kg || "0.000") + " kg";
+      $("kpiDiscrepancyKg").textContent = (mf.flagged_discrepancy_kg || "0.000") + " kg";
+
+      // Pickers table
+      const pTbody = $("pickerEconomicsTable").querySelector("tbody");
+      const pickers = (insights.picker_economics && insights.picker_economics.pickers) || [];
+      if (!pickers.length) {
+        pTbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--muted); padding: 16px;">No collection activity yet.</td></tr>';
+      } else {
+        pTbody.innerHTML = pickers.map(p => `
+          <tr>
+            <td><strong>${safe(p.picker_id)}</strong></td>
+            <td>${p.lots_count}</td>
+            <td><strong>${safe(p.total_weight_kg)}</strong> kg</td>
+            <td><small>${Object.entries(p.materials).map(([m, w]) => `${m}: ${w}kg`).join(", ")}</small></td>
+            <td><strong>₹${safe(p.reported_transaction_value_inr)}</strong></td>
+          </tr>
+        `).join("");
+      }
+
+      // Polymers flow table
+      const polyTbody = $("polymerFlowTable").querySelector("tbody");
+      const polymers = mf.polymers || {};
+      const polyKeys = Object.keys(polymers);
+      if (!polyKeys.length) {
+        polyTbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--muted); padding: 16px;">No polymer batches created yet.</td></tr>';
+      } else {
+        polyTbody.innerHTML = polyKeys.map(k => {
+          const row = polymers[k];
+          const inKg = parseFloat(row.input_kg || "0");
+          const outKg = parseFloat(row.output_kg || "0");
+          const yieldPct = inKg > 0 && outKg > 0 ? ((outKg / inKg) * 100).toFixed(2) : "0.00";
+          return `
+            <tr>
+              <td><strong>${safe(k)}</strong></td>
+              <td>${row.batches}</td>
+              <td>${safe(row.input_kg)} kg</td>
+              <td>${safe(row.output_kg)} kg</td>
+              <td>${yieldPct}%</td>
+            </tr>
+          `;
+        }).join("");
+      }
+    }
+
+    /* -------------------------------------------------------------
+       RECORDED EVENT TRAIL
+    ------------------------------------------------------------- */
     function renderEventTrail() {
       const container = $("eventTrailList");
       if (!state.events.length) {
-        container.innerHTML = '<li style="color: var(--muted); font-size: 0.86rem;">No audit events recorded yet.</li>';
+        container.innerHTML = '<li style="color: var(--muted); font-size: 0.86rem;">No events recorded in ledger yet.</li>';
         return;
       }
       container.innerHTML = state.events.slice().reverse().slice(0, 30).map(e => {
-        const isRejected = e.kind === "OUTPUT_REJECTED";
+        const isDiscrepancy = e.kind === "OUTPUT_REJECTED";
         let summary = "";
         if (e.kind === "LOT_RECORDED") summary = `Lot ${safe(e.lot_id)} recorded: ${safe(e.weight_kg)} kg ${safe(e.material || "")}`;
         else if (e.kind === "BATCH_CREATED") summary = `Batch ${safe(e.batch_id)} assembled (${safe(e.input_kg)} kg ${safe(e.material || "")})`;
-        else if (e.kind === "OUTPUT_RECORDED") summary = `Batch ${safe(e.batch_id)} output recorded: ${safe(e.output_kg)} kg (${safe(e.yield_pct)}% yield)`;
-        else if (e.kind === "OUTPUT_REJECTED") summary = `⚠️ Output Claim Rejected on Batch ${safe(e.batch_id)}: Claimed ${safe(e.claimed_kg)} kg > Input ${safe(e.available_kg)} kg`;
-        else if (e.kind === "DEMO_SCENARIO_CREATED") summary = `Sankalp Demo Scenario Initialized: Batch ${safe(e.batch_id)} (340.000 kg input)`;
+        else if (e.kind === "OUTPUT_RECORDED") summary = `Batch ${safe(e.batch_id)} reported output: ${safe(e.output_kg)} kg (${safe(e.yield_pct)}% yield)`;
+        else if (e.kind === "OUTPUT_REJECTED") summary = `⚠️ Discrepancy Flagged on Batch ${safe(e.batch_id)}: Claimed ${safe(e.claimed_kg)} kg > Input ${safe(e.available_kg)} kg`;
+        else if (e.kind === "HANDOVER_RECORDED") summary = `Custody Handover ${safe(e.handover_id)} recorded: ${safe(e.sender)} → ${safe(e.receiver)} (${safe(e.claimed_weight_kg)} kg)`;
+        else if (e.kind === "HANDOVER_ACKNOWLEDGED") summary = `Handover ${safe(e.handover_id)} acknowledged by ${safe(e.acknowledged_by)}`;
+        else if (e.kind === "AUDIT_REVIEW_RECORDED") summary = `Auditor Decision logged for ${safe(e.target_type)} ${safe(e.target_id)}: ${safe(e.status)} by ${safe(e.reviewer)}`;
+        else if (e.kind === "EVIDENCE_UPLOADED") summary = `Photo evidence uploaded (${safe(e.original_name)})`;
         else summary = safe(e.kind);
 
         return `
-          <li class="event-item ${isRejected ? 'rejected' : ''}">
-            <div class="event-meta">
+          <li class="event-item ${isDiscrepancy ? 'discrepancy' : ''}">
+            <div style="display: flex; justify-content: space-between; font-size: 0.76rem; color: var(--muted); margin-bottom: 2px;">
               <span><code>${safe(e.id)}</code> · ${safe(e.time)}</span>
-              <span class="pill ${isRejected ? 'pill-rejected' : 'pill-batched'}">${safe(e.kind)}</span>
+              <span class="pill ${isDiscrepancy ? 'pill-discrepancy' : 'pill-batched'}">${safe(e.kind)}</span>
             </div>
-            <div class="event-title">${summary}</div>
-            ${e.reason ? `<div class="event-reason">Violation Reason: ${safe(e.reason)}</div>` : ''}
+            <div style="font-weight: 700; font-size: 0.88rem;">${summary}</div>
+            ${e.reason ? `<div style="color: #c62828; font-weight: 600; font-size: 0.82rem; margin-top: 3px;">Finding: ${safe(e.reason)}</div>` : ''}
           </li>
         `;
       }).join("");
     }
 
-    /* SANKALP DEMO HELPERS */
-    async function createDemoScenario() {
+    /* -------------------------------------------------------------
+       60-SECOND GUIDED DEMO STORY RUNNER
+    ------------------------------------------------------------- */
+    function showStoryStep(stepNum) {
+      for (let i = 1; i <= 4; i++) {
+        const card = $("stepCard-" + i);
+        if (card) card.classList.toggle("active", i === stepNum);
+      }
+      if (stepNum === 1) setTab("picker");
+      else if (stepNum === 2) setTab("aggregator");
+      else if (stepNum === 3) setTab("recycler");
+      else if (stepNum === 4) setTab("auditor");
+    }
+
+    async function playGuidedDemo() {
       try {
+        note("Starting 60-Second Guided Sankalp Demo: Initializing 340 kg scenario...", "info");
         const res = await api("demo", "POST", {});
-        note(`Demo Scenario created! Batch ${res.batch.id} initialized with 340.000 kg PET input.`, "ok");
+        const batchId = res.batch.id;
         await refresh();
-        inspectBatch(res.batch.id);
-        return res.batch.id;
+
+        // Stage 1
+        showStoryStep(1);
+        note("Stage 1: Recorded 200.000 kg + 140.000 kg PET collection lots with submitted photo evidence & GPS coordinates.", "ok");
+
+        // Wait 1.5s then advance to Stage 2
+        setTimeout(async () => {
+          showStoryStep(2);
+          note(`Stage 2: Assembled into sealed Batch ${batchId} (340.000 kg PET) with signed custody handovers.`, "ok");
+
+          // Wait 2s then advance to Stage 3 (attempt 500 kg claim)
+          setTimeout(async () => {
+            showStoryStep(3);
+            note(`Stage 3: Submitting unauthorized 500.000 kg output claim on Batch ${batchId}...`, "info");
+            
+            try {
+              await api("outputs", "POST", { batch_id: batchId, output_kg: "500.000" });
+            } catch (err) {
+              note(`Stage 3 Result: Claim Blocked! Flagged 160.000 kg mass discrepancy (+160 kg phantom output).`, "error");
+              await refresh();
+
+              // Wait 2.5s then advance to Stage 4 (Auditor review)
+              setTimeout(async () => {
+                showStoryStep(4);
+                // Record demo auditor decision
+                await api("reviews", "POST", {
+                  target_type: "BATCH",
+                  target_id: batchId,
+                  status: "NEEDS_FIELD_CHECK",
+                  reviewer_name: "Sankalp Lead Auditor",
+                  reason: "160.000 kg mass discrepancy flagged between 340 kg aggregator input and 500 kg recycler output claim. Physical weighing scale audit required."
+                });
+                await refresh();
+                note(`Stage 4 Complete: Case routed to Auditor Queue. Decision recorded as NEEDS_FIELD_CHECK with physical scale audit mandate.`, "ok");
+              }, 2500);
+            }
+          }, 2000);
+        }, 1500);
+
       } catch (err) {
-        note("Demo creation failed: " + err.message, "error");
+        note("Demo failed: " + err.message, "error");
       }
     }
 
-    async function startFraudDemo() {
-      try {
-        const batchId = await createDemoScenario();
-        if (batchId) {
-          setTab("recycler");
-          setFraudValue(batchId);
-          note("Sankalp Demo batch created (340 kg). Switched to Recycler view with 500 kg claim pre-filled. Click 'Submit Output' to observe deterministic fraud rejection.", "info");
-        }
-      } catch (err) {
-        note("Could not start fraud demo: " + err.message, "error");
-      }
-    }
-
-    // Initialize
+    // Initial load
     refresh();
   </script>
 </body>

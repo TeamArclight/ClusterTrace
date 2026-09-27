@@ -5,6 +5,7 @@ audit pack lineage, honest EPR disclaimers, and HTTP persistence.
 from decimal import Decimal
 from http.server import ThreadingHTTPServer
 from pathlib import Path
+import hashlib
 import json
 import os
 import tempfile
@@ -255,6 +256,188 @@ class TestClusterTraceHTTP(unittest.TestCase):
         self.assertIn("OUTPUT_REJECTED", event_kinds)
         self.assertIn("OUTPUT_RECORDED", event_kinds)
 
+    def test_http_evidence_upload_and_path_traversal_protection(self):
+        # 1. Upload sample evidence via multipart/form-data
+        boundary = "---------------------------ClusterTraceBoundary123"
+        dummy_jpeg = b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00`\x00`\x00\x00\xff\xdb\x00C\x00\x08\x06\x06\x07\x06\x05\x08\x07\x07\x07\t\t\x08\n\x0c\x14\r\x0c\x0b\x0b\x0c\x19\x12\x13\x0f\x14\x1d\x1a\x1f\x1e\x1d\x1a\x1c\x1c $.' \",#\x1c\x1c(7),01444\x1f'9=82<.342\xff\xc0\x00\x0b\x08\x00\x01\x00\x01\x01\x01\x11\x00\xff\xc4\x00\x1f\x00\x00\x01\x05\x01\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\xff\xda\x00\x08\x01\x01\x00\x00?\x00\xbf\x00\xff\xd9"
+        
+        body_parts = [
+            f"--{boundary}\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"sample.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n".encode("utf-8"),
+            dummy_jpeg,
+            f"\r\n--{boundary}\r\nContent-Disposition: form-data; name=\"latitude\"\r\n\r\n22.5726\r\n".encode("utf-8"),
+            f"--{boundary}\r\nContent-Disposition: form-data; name=\"longitude\"\r\n\r\n88.3639\r\n".encode("utf-8"),
+            f"--{boundary}\r\nContent-Disposition: form-data; name=\"accuracy_m\"\r\n\r\n12.5\r\n".encode("utf-8"),
+            f"--{boundary}--\r\n".encode("utf-8")
+        ]
+        body = b"".join(body_parts)
+
+        url = f"{self.base_url}/api/upload"
+        req = urllib.request.Request(url, data=body, headers={"Content-Type": f"multipart/form-data; boundary={boundary}"}, method="POST")
+        with urllib.request.urlopen(req) as resp:
+            status = resp.status
+            upload_res = json.loads(resp.read().decode("utf-8"))
+        self.assertEqual(status, 201)
+        self.assertIn("id", upload_res)
+        self.assertEqual(upload_res["mime_type"], "image/jpeg")
+        self.assertIsNotNone(upload_res["geolocation"])
+        self.assertEqual(upload_res["geolocation"]["latitude"], 22.5726)
+
+        # 2. Retrieve uploaded file safely
+        file_url = f"{self.base_url}{upload_res['url']}"
+        with urllib.request.urlopen(file_url) as file_resp:
+            self.assertEqual(file_resp.status, 200)
+            self.assertEqual(file_resp.headers.get("Content-Type"), "image/jpeg")
+            self.assertEqual(file_resp.read(), dummy_jpeg)
+
+        # 3. Path traversal attack attempt: must return 404
+        bad_url = f"{self.base_url}/uploads/../../server.py"
+        try:
+            urllib.request.urlopen(bad_url)
+            self.fail("Path traversal request should have failed")
+        except urllib.error.HTTPError as exc:
+            self.assertEqual(exc.code, 404)
+            exc.close()
+
+    def test_http_handovers_reviews_insights(self):
+        # 1. Create a lot
+        status, lot_res, _ = self.request("/api/lots", method="POST", payload={
+            "picker": "P-99", "material": "HDPE", "location": "Howrah Yard", "weight": "150.000", "price_per_kg": "18.000"
+        })
+        self.assertEqual(status, 201)
+        lot_id = lot_res["id"]
+
+        # 2. Record custody handover from picker to aggregator with slight divergence
+        status, ho_res, _ = self.request("/api/handovers", method="POST", payload={
+            "stage": "PICKER_TO_AGGREGATOR",
+            "sender": "P-99",
+            "receiver": "Howrah Aggregator",
+            "claimed_weight_kg": "146.000",
+            "lot_id": lot_id,
+            "notes": "Moisture loss during sorting"
+        })
+        self.assertEqual(status, 201)
+        ho_id = ho_res["id"]
+        self.assertEqual(ho_res["reconciliation"]["status"], "LOSS")
+        self.assertEqual(ho_res["reconciliation"]["delta_kg"], "-4.000")
+
+        # 3. Acknowledge handover
+        status, ack_res, _ = self.request("/api/handovers/acknowledge", method="POST", payload={
+            "handover_id": ho_id,
+            "status": "ACKNOWLEDGED",
+            "acknowledged_by": "Howrah Station Lead"
+        })
+        self.assertEqual(status, 200)
+        self.assertEqual(ack_res["acknowledgement_status"], "ACKNOWLEDGED")
+
+        # 4. Check discrepancy detection endpoint
+        status, disc_res, _ = self.request("/api/discrepancies", method="GET")
+        self.assertEqual(status, 200)
+        self.assertIn("findings", disc_res)
+        divergence_findings = [f for f in disc_res["findings"] if f["rule_id"] == "HANDOVER_WEIGHT_DIVERGENCE"]
+        self.assertTrue(len(divergence_findings) > 0)
+
+        # 5. Record auditor review
+        status, rev_res, _ = self.request("/api/reviews", method="POST", payload={
+            "target_type": "LOT",
+            "target_id": lot_id,
+            "status": "NEEDS_FIELD_CHECK",
+            "reason": "4 kg weight loss noted on handover; scale tare requires cross-calibration check.",
+            "reviewer_name": "Quality Inspector Ramesh"
+        })
+        self.assertEqual(status, 201)
+        self.assertEqual(rev_res["status"], "NEEDS_FIELD_CHECK")
+
+        # 6. Check insights endpoint
+        status, ins_res, _ = self.request("/api/insights", method="GET")
+        self.assertEqual(status, 200)
+        p_data = next((p for p in ins_res["picker_economics"]["pickers"] if p["picker_id"] == "P-99"), None)
+        self.assertIsNotNone(p_data)
+        self.assertEqual(p_data["total_weight_kg"], "150.000")
+        # 150 kg * 18 INR = 2700.00 INR
+        self.assertEqual(p_data["reported_transaction_value_inr"], "2700.00")
+
+
+class TestClusterTraceFiveFeaturesCore(unittest.TestCase):
+    def setUp(self):
+        self.data = server.initial()
+
+    def test_evidence_capture_and_hashing(self):
+        sample_bytes = b"sample-jpeg-payload-content-12345"
+        ev = server.save_evidence(self.data, sample_bytes, "collection_bag.jpg", "image/jpeg", {
+            "latitude": 22.5, "longitude": 88.3, "accuracy_m": 10.0
+        })
+        expected_sha = hashlib.sha256(sample_bytes).hexdigest()
+        self.assertEqual(ev["sha256"], expected_sha)
+        self.assertEqual(ev["verification_status"], "Submitted evidence (unverified)")
+        self.assertEqual(ev["geolocation"]["latitude"], 22.5)
+
+        # Empty file rejection
+        with self.assertRaises(ValueError):
+            server.save_evidence(self.data, b"", "empty.jpg", "image/jpeg")
+
+        # Disallowed file type rejection
+        with self.assertRaises(ValueError):
+            server.save_evidence(self.data, b"malicious", "script.exe", "application/x-msdownload")
+
+        # Oversized file (>5MB) rejection
+        with self.assertRaises(ValueError):
+            server.save_evidence(self.data, b"x" * (5 * 1024 * 1024 + 1), "big.jpg", "image/jpeg")
+
+    def test_handover_reconciliation_preserves_original_weight(self):
+        l = server.lot(self.data, {"picker": "P-1", "material": "PET", "location": "Ward 5", "weight": "100.000"})
+        ho = server.record_handover(self.data, {
+            "stage": "PICKER_TO_AGGREGATOR",
+            "sender": "P-1",
+            "receiver": "Aggregator",
+            "claimed_weight_kg": "97.000",
+            "lot_id": l["id"]
+        })
+        # Handover reconciliation flagged loss
+        self.assertEqual(ho["reconciliation"]["status"], "LOSS")
+        self.assertEqual(ho["reconciliation"]["delta_kg"], "-3.000")
+        # Original collection lot weight NEVER silently altered
+        self.assertEqual(l["weight_kg"], "100.000")
+
+    def test_duplicate_evidence_hash_discrepancy_detection(self):
+        content = b"identical-photo-evidence-bytes"
+        ev1 = server.save_evidence(self.data, content, "bag1.jpg", "image/jpeg")
+        ev2 = server.save_evidence(self.data, content, "bag2.jpg", "image/jpeg")
+        self.assertEqual(ev1["sha256"], ev2["sha256"])
+
+        disc = server.detect_discrepancies(self.data)
+        dup_rules = [f for f in disc["findings"] if f["rule_id"] == "DUPLICATE_EVIDENCE_HASH"]
+        self.assertEqual(len(dup_rules), 1)
+        self.assertIn("Identical", dup_rules[0]["calculation"])
+
+    def test_auditor_review_decision_mandatory_reason(self):
+        l = server.lot(self.data, {"picker": "P-1", "material": "PET", "location": "Ward 5", "weight": "100.000"})
+        # Mandatory reason required
+        with self.assertRaises(ValueError):
+            server.record_review(self.data, {
+                "target_type": "LOT", "target_id": l["id"], "status": "RESOLVED", "reason": "", "reviewer_name": "Auditor"
+            })
+
+        rev = server.record_review(self.data, {
+            "target_type": "LOT", "target_id": l["id"], "status": "RESOLVED",
+            "reason": "Physical inspection verified tare weight calibration.",
+            "reviewer_name": "Lead Auditor"
+        })
+        self.assertEqual(rev["status"], "RESOLVED")
+        self.assertEqual(l["review_status"], "RESOLVED")
+        self.assertTrue(any(e["kind"] == "AUDIT_REVIEW_RECORDED" for e in self.data["events"]))
+
+    def test_picker_income_and_material_flow_insights(self):
+        server.lot(self.data, {"picker": "P-10", "material": "PET", "location": "Loc A", "weight": "100.000", "price_per_kg": "16.000"})
+        server.lot(self.data, {"picker": "P-10", "material": "PET", "location": "Loc B", "weight": "50.000", "price_per_kg": "16.000"})
+        ins = server.calculate_insights(self.data)
+        p10 = next((p for p in ins["picker_economics"]["pickers"] if p["picker_id"] == "P-10"), None)
+        self.assertIsNotNone(p10)
+        self.assertEqual(p10["total_weight_kg"], "150.000")
+        # 150 kg * 16 INR = 2400.00 INR
+        self.assertEqual(p10["reported_transaction_value_inr"], "2400.00")
+        self.assertIn("unconfirmed payment", ins["picker_economics"]["disclaimer"].lower())
+
 
 if __name__ == "__main__":
     unittest.main()
+
