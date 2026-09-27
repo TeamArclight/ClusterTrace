@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ClusterTrace · Plastic traceability</title>
+<style>
+:root{font-family:system-ui,sans-serif;color:#17312d;background:#f5f7f2}*{box-sizing:border-box}body{max-width:1120px;margin:auto;padding:30px 18px}h1{font-size:2.5rem;margin:0}h2{font-size:1.15rem;margin:0 0 15px}header{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;margin-bottom:28px}small,p{color:#58706b}.tag{color:#0c7865;font-weight:700;text-transform:uppercase;letter-spacing:.1em}main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.card{background:white;border:1px solid #dae4dd;border-radius:16px;padding:20px;box-shadow:0 5px 20px #16382909}.wide{grid-column:1/-1}input,select,button{font:inherit;padding:11px;border:1px solid #cbdad0;border-radius:9px}input,select{width:100%;margin:5px 0 12px;background:white}button{background:#116f5d;color:white;border:0;cursor:pointer;font-weight:650}button:hover{background:#085140}button.secondary{background:#e4efe9;color:#205c4d}label{font-size:.88rem;font-weight:600}ul{padding-left:20px}li{margin:8px 0;line-height:1.5}code{background:#edf4ee;padding:3px 5px;border-radius:4px}#notice{padding:12px;border-radius:10px;display:none;margin-bottom:16px}#notice.error{display:block;background:#ffebe7;color:#a32615}#notice.ok{display:block;background:#e0f4e8;color:#126137}.muted{color:#6c817b}.row{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.batch{border-top:1px solid #e0e9e2;padding:14px 0}.warn{color:#ac3525;font-weight:bold}@media(max-width:700px){main{grid-template-columns:1fr}.wide{grid-column:auto}}
+</style>
+<header><div><div class="tag">Plastic chain of custody</div><h1>ClusterTrace</h1><p>Every kilogram has a source. Every claim has a trail.</p></div><button class="secondary" onclick="loadDemo()">Load 340 kg demo</button></header>
+<div id="notice"></div>
+<main>
+<section class="card"><h2>1 · Record collection lot</h2><form id="lotForm">
+<label>Picker ID<input name="picker" required placeholder="P-103"></label>
+<label>Material<input name="material" required value="PET"></label>
+<label>Weight, kg<input name="weight" required type="number" min=".001" step=".001" placeholder="120"></label>
+<label>Collection location<input name="location" required placeholder="Kolkata"></label>
+<label>Photo reference (optional)<input name="photo_ref" placeholder="photo-003.jpg"></label>
+<button>Record lot</button></form><small>Photo reference is a text field in this MVP; it does not upload or validate images.</small></section>
+<section class="card"><h2>2 · Merge lots into batch</h2><p>Select available lots of the same material.</p><form id="batchForm"><div id="unbatched"></div><button>Create batch</button></form></section>
+<section class="card wide"><div class="row"><h2>3 · Process and inspect batches</h2><span class="muted">Output cannot exceed recorded input</span></div><div id="batches"></div></section>
+<section class="card wide"><h2>Event trail</h2><ul id="events"></ul></section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+function safe(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function note(message,error=false){$("notice").textContent=message;$("notice").className=error?"error":"ok"}
+async function api(path,body){let r=await fetch("/api/"+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});let x=await r.json();if(!r.ok)throw Error(x.error||"Request failed");return x}
+async function refresh(){let d=await (await fetch("/api/state")).json();let available=d.lots.filter(l=>!l.batch_id);
+$("unbatched").innerHTML=available.length?available.map(l=>'<label style="display:block"><input style="width:auto" type="checkbox" name="lot" value="'+safe(l.id)+'"> '+safe(l.id)+' · '+safe(l.picker)+' · '+safe(l.weight_kg)+' kg '+safe(l.material)+'</label>').join(""):'<p class="muted">No unbatched lots yet.</p>';
+$("batches").innerHTML=d.batches.length?d.batches.slice().reverse().map(b=>'<div class="batch"><div class="row"><strong>'+safe(b.id)+' · '+safe(b.material)+'</strong><a href="/api/report/'+encodeURIComponent(b.id)+'">Download audit pack</a></div><p>Input: <strong>'+safe(b.input_kg)+' kg</strong> · Source lots: '+b.lot_ids.map(safe).join(", ")+' · Output: '+(b.output_kg===null?"Pending":safe(b.output_kg)+" kg")+'</p>'+(b.output_kg===null?'<form onsubmit="recordOutput(event,\''+safe(b.id)+'\')"><input aria-label="Recycled output in kilograms" type="number" min=".001" step=".001" required placeholder="Output kg (try 500 for demo)" style="max-width:270px"> <button>Record recycler output</button></form>':"")+'</div>').join(""):'<p class="muted">Create a batch to begin.</p>';
+$("events").innerHTML=d.events.slice().reverse().slice(0,25).map(e=>'<li><strong>'+safe(e.kind)+'</strong> · '+safe(e.time)+' · '+safe(e.batch_id||e.lot_id||"")+(e.reason?' · <span class="warn">'+safe(e.reason)+'</span>':"")+'</li>').join("")||'<li class="muted">No events yet.</li>'}
+$("lotForm").onsubmit=async e=>{e.preventDefault();try{await api("lots",Object.fromEntries(new FormData(e.target)));e.target.reset();note("Lot recorded");await refresh()}catch(err){note(err.message,true)}};
+$("batchForm").onsubmit=async e=>{e.preventDefault();try{await api("batches",{lot_ids:[...e.target.querySelectorAll(":checked")].map(x=>x.value)});note("Batch created");await refresh()}catch(err){note(err.message,true)}};
+async function recordOutput(e,id){e.preventDefault();try{await api("outputs",{batch_id:id,output_kg:e.target.querySelector("input").value});note("Output recorded");await refresh()}catch(err){note(err.message,true);await refresh()}}
+async function loadDemo(){try{let b=await api("demo",{});note("Demo batch "+b.id+" created with 340 kg input. Try 500 kg output.");await refresh()}catch(err){note(err.message,true)}}
+refresh();
+</script></html>
