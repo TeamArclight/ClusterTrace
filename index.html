@@ -1,35 +1,1023 @@
 <!doctype html>
-<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ClusterTrace · Plastic traceability</title>
-<style>
-:root{font-family:system-ui,sans-serif;color:#17312d;background:#f5f7f2}*{box-sizing:border-box}body{max-width:1120px;margin:auto;padding:30px 18px}h1{font-size:2.5rem;margin:0}h2{font-size:1.15rem;margin:0 0 15px}header{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;margin-bottom:28px}small,p{color:#58706b}.tag{color:#0c7865;font-weight:700;text-transform:uppercase;letter-spacing:.1em}main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.card{background:white;border:1px solid #dae4dd;border-radius:16px;padding:20px;box-shadow:0 5px 20px #16382909}.wide{grid-column:1/-1}input,select,button{font:inherit;padding:11px;border:1px solid #cbdad0;border-radius:9px}input,select{width:100%;margin:5px 0 12px;background:white}button{background:#116f5d;color:white;border:0;cursor:pointer;font-weight:650}button:hover{background:#085140}button.secondary{background:#e4efe9;color:#205c4d}label{font-size:.88rem;font-weight:600}ul{padding-left:20px}li{margin:8px 0;line-height:1.5}code{background:#edf4ee;padding:3px 5px;border-radius:4px}#notice{padding:12px;border-radius:10px;display:none;margin-bottom:16px}#notice.error{display:block;background:#ffebe7;color:#a32615}#notice.ok{display:block;background:#e0f4e8;color:#126137}.muted{color:#6c817b}.row{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.batch{border-top:1px solid #e0e9e2;padding:14px 0}.warn{color:#ac3525;font-weight:bold}@media(max-width:700px){main{grid-template-columns:1fr}.wide{grid-column:auto}}
-</style>
-<header><div><div class="tag">Plastic chain of custody</div><h1>ClusterTrace</h1><p>Every kilogram has a source. Every claim has a trail.</p></div><button class="secondary" onclick="loadDemo()">Load 340 kg demo</button></header>
-<div id="notice"></div>
-<main>
-<section class="card"><h2>1 · Record collection lot</h2><form id="lotForm">
-<label>Picker ID<input name="picker" required placeholder="P-103"></label>
-<label>Material<input name="material" required value="PET"></label>
-<label>Weight, kg<input name="weight" required type="number" min=".001" step=".001" placeholder="120"></label>
-<label>Collection location<input name="location" required placeholder="Kolkata"></label>
-<label>Photo reference (optional)<input name="photo_ref" placeholder="photo-003.jpg"></label>
-<button>Record lot</button></form><small>Photo reference is a text field in this MVP; it does not upload or validate images.</small></section>
-<section class="card"><h2>2 · Merge lots into batch</h2><p>Select available lots of the same material.</p><form id="batchForm"><div id="unbatched"></div><button>Create batch</button></form></section>
-<section class="card wide"><div class="row"><h2>3 · Process and inspect batches</h2><span class="muted">Output cannot exceed recorded input</span></div><div id="batches"></div></section>
-<section class="card wide"><h2>Event trail</h2><ul id="events"></ul></section>
-</main>
-<script>
-const $=id=>document.getElementById(id);
-function safe(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function note(message,error=false){$("notice").textContent=message;$("notice").className=error?"error":"ok"}
-async function api(path,body){let r=await fetch("/api/"+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});let x=await r.json();if(!r.ok)throw Error(x.error||"Request failed");return x}
-async function refresh(){let d=await (await fetch("/api/state")).json();let available=d.lots.filter(l=>!l.batch_id);
-$("unbatched").innerHTML=available.length?available.map(l=>'<label style="display:block"><input style="width:auto" type="checkbox" name="lot" value="'+safe(l.id)+'"> '+safe(l.id)+' · '+safe(l.picker)+' · '+safe(l.weight_kg)+' kg '+safe(l.material)+'</label>').join(""):'<p class="muted">No unbatched lots yet.</p>';
-$("batches").innerHTML=d.batches.length?d.batches.slice().reverse().map(b=>'<div class="batch"><div class="row"><strong>'+safe(b.id)+' · '+safe(b.material)+'</strong><a href="/api/report/'+encodeURIComponent(b.id)+'">Download audit pack</a></div><p>Input: <strong>'+safe(b.input_kg)+' kg</strong> · Source lots: '+b.lot_ids.map(safe).join(", ")+' · Output: '+(b.output_kg===null?"Pending":safe(b.output_kg)+" kg")+'</p>'+(b.output_kg===null?'<form onsubmit="recordOutput(event,\''+safe(b.id)+'\')"><input aria-label="Recycled output in kilograms" type="number" min=".001" step=".001" required placeholder="Output kg (try 500 for demo)" style="max-width:270px"> <button>Record recycler output</button></form>':"")+'</div>').join(""):'<p class="muted">Create a batch to begin.</p>';
-$("events").innerHTML=d.events.slice().reverse().slice(0,25).map(e=>'<li><strong>'+safe(e.kind)+'</strong> · '+safe(e.time)+' · '+safe(e.batch_id||e.lot_id||"")+(e.reason?' · <span class="warn">'+safe(e.reason)+'</span>':"")+'</li>').join("")||'<li class="muted">No events yet.</li>'}
-$("lotForm").onsubmit=async e=>{e.preventDefault();try{await api("lots",Object.fromEntries(new FormData(e.target)));e.target.reset();note("Lot recorded");await refresh()}catch(err){note(err.message,true)}};
-$("batchForm").onsubmit=async e=>{e.preventDefault();try{await api("batches",{lot_ids:[...e.target.querySelectorAll(":checked")].map(x=>x.value)});note("Batch created");await refresh()}catch(err){note(err.message,true)}};
-async function recordOutput(e,id){e.preventDefault();try{await api("outputs",{batch_id:id,output_kg:e.target.querySelector("input").value});note("Output recorded");await refresh()}catch(err){note(err.message,true);await refresh()}}
-async function loadDemo(){try{let b=await api("demo",{});note("Demo batch "+b.id+" created with 340 kg input. Try 500 kg output.");await refresh()}catch(err){note(err.message,true)}}
-refresh();
-</script></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ClusterTrace · Plastic Chain of Custody & Mass Balance</title>
+  <style>
+    :root {
+      --primary: #0d6e59;
+      --primary-dark: #084c3d;
+      --primary-light: #e4f3ed;
+      --bg: #f4f6f2;
+      --surface: #ffffff;
+      --border: #d5ded8;
+      --text: #1a2e2b;
+      --muted: #5e7570;
+      --warn-bg: #fff0ed;
+      --warn-text: #b3261e;
+      --warn-border: #f8c9c4;
+      --ok-bg: #e6f7ec;
+      --ok-text: #137333;
+      --ok-border: #b8e6c7;
+      --info-bg: #eaf1f8;
+      --info-text: #174ea6;
+      --radius: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { max-width: 1240px; margin: auto; padding: 24px 16px 60px; line-height: 1.5; }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand-title { display: flex; align-items: center; gap: 12px; }
+    .brand-title h1 { font-size: 2rem; color: var(--primary-dark); letter-spacing: -0.02em; }
+    .tag {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    
+    /* Disclaimer Banner */
+    .disclaimer-banner {
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      color: #6d4c41;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.83rem;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .disclaimer-banner strong { color: #bf360c; }
+
+    /* Sankalp Quick Demo Hero Card */
+    .demo-hero {
+      background: linear-gradient(135deg, #09473b 0%, #116f5d 100%);
+      color: white;
+      border-radius: var(--radius);
+      padding: 18px 22px;
+      margin-bottom: 22px;
+      box-shadow: 0 4px 16px rgba(13, 110, 89, 0.18);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .demo-hero h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 4px; }
+    .demo-hero p { font-size: 0.9rem; color: #d6ebe4; max-width: 720px; }
+    .demo-btn {
+      background: #ffecb3;
+      color: #5d4037;
+      border: 0;
+      padding: 11px 18px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      white-space: nowrap;
+    }
+    .demo-btn:hover { background: #ffe082; }
+
+    /* Workflow Nav Tabs */
+    .tabs-nav-wrapper { margin-bottom: 20px; }
+    .tabs-meta {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      gap: 8px;
+      background: #e3ebe5;
+      padding: 6px;
+      border-radius: 10px;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      flex: 1;
+      min-width: 140px;
+      background: transparent;
+      border: 0;
+      color: var(--text);
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 10px 14px;
+      border-radius: 7px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+    }
+    .tab-btn.active {
+      background: var(--surface);
+      color: var(--primary-dark);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+
+    /* Notification message */
+    #notice {
+      padding: 13px 16px;
+      border-radius: 8px;
+      margin-bottom: 18px;
+      display: none;
+      font-size: 0.92rem;
+      line-height: 1.4;
+      animation: fadeIn 0.2s ease;
+    }
+    #notice.ok { display: block; background: var(--ok-bg); color: var(--ok-text); border: 1px solid var(--ok-border); }
+    #notice.error { display: block; background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--warn-border); }
+    #notice.info { display: block; background: var(--info-bg); color: var(--info-text); border: 1px solid #bbd3ea; }
+
+    /* Cards & Grids */
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+    .grid-1 { display: grid; grid-template-columns: 1fr; gap: 20px; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+    .card h3 { font-size: 1.15rem; color: var(--primary-dark); margin-bottom: 8px; }
+    .card-desc { font-size: 0.85rem; color: var(--muted); margin-bottom: 16px; }
+
+    /* Forms & Inputs */
+    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 12px; color: var(--text); }
+    .field-hint { display: block; font-size: 0.75rem; font-weight: normal; color: var(--muted); margin-top: 3px; }
+    .self-reported-badge {
+      font-size: 0.7rem;
+      background: #fff3e0;
+      color: #e65100;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      margin-left: 6px;
+      text-transform: uppercase;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font: inherit;
+      font-size: 0.92rem;
+      margin-top: 5px;
+      background: white;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(13, 110, 89, 0.15);
+    }
+    button.primary {
+      background: var(--primary);
+      color: white;
+      border: 0;
+      padding: 11px 18px;
+      border-radius: 8px;
+      font-size: 0.92rem;
+      font-weight: 650;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    button.primary:hover { background: var(--primary-dark); }
+    button.secondary {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      border: 1px solid var(--border);
+      padding: 9px 14px;
+      border-radius: 7px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.secondary:hover { background: #d3eadf; }
+    button.fraud-trigger {
+      background: #fbe9e7;
+      color: #c62828;
+      border: 1px solid #ffcdd2;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.fraud-trigger:hover { background: #ffcdd2; }
+    button.legit-trigger {
+      background: #e8f5e9;
+      color: #2e7d32;
+      border: 1px solid #c8e6c9;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.legit-trigger:hover { background: #c8e6c9; }
+
+    /* Tables */
+    .table-wrapper { overflow-x: auto; margin-top: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    th { text-align: left; padding: 10px 12px; background: #ebf1ed; color: var(--muted); font-weight: 700; border-bottom: 1px solid var(--border); }
+    td { padding: 10px 12px; border-bottom: 1px solid #e7eee9; vertical-align: middle; }
+    tr:hover td { background: #fafbfa; }
+    code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; background: #eef3ef; padding: 2px 5px; border-radius: 4px; font-size: 0.82rem; }
+
+    /* Status Pills */
+    .pill { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.74rem; font-weight: 700; }
+    .pill-unbatched { background: #e0f2fe; color: #0369a1; }
+    .pill-batched { background: #f1f5f9; color: #475569; }
+    .pill-pending { background: #fef3c7; color: #92400e; }
+    .pill-processed { background: #dcfce7; color: #166534; }
+    .pill-rejected { background: #fee2e2; color: #991b1b; }
+
+    /* Lineage Drill Down Visualizer */
+    .lineage-container {
+      background: #f9fbf9;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 18px;
+    }
+    .lineage-stages {
+      display: flex;
+      align-items: stretch;
+      gap: 16px;
+      overflow-x: auto;
+      padding: 10px 4px 18px;
+    }
+    .lineage-step {
+      flex: 1;
+      min-width: 250px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .lineage-step-header {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--primary);
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .lineage-step-title { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+    .lineage-step-content { font-size: 0.82rem; color: var(--text); flex-grow: 1; }
+    .lineage-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      color: var(--muted);
+      user-select: none;
+    }
+    .lot-chip {
+      background: #f0f7f3;
+      border: 1px solid #d5e6db;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      font-size: 0.8rem;
+    }
+
+    /* Event Trail */
+    .event-list { list-style: none; margin-top: 12px; }
+    .event-item {
+      padding: 12px 14px;
+      border-left: 3px solid var(--primary);
+      background: white;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 10px;
+      border-top: 1px solid #eef3ef;
+      border-right: 1px solid #eef3ef;
+      border-bottom: 1px solid #eef3ef;
+      font-size: 0.84rem;
+    }
+    .event-item.rejected {
+      border-left-color: #d32f2f;
+      background: #fff8f7;
+    }
+    .event-meta { display: flex; justify-content: space-between; font-size: 0.76rem; color: var(--muted); margin-bottom: 4px; }
+    .event-title { font-weight: 700; font-size: 0.88rem; }
+    .event-reason { color: #c62828; font-weight: 600; margin-top: 4px; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 860px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .lineage-stages { flex-direction: column; }
+      .lineage-arrow { transform: rotate(90deg); margin: 6px 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <div class="brand-title">
+        <span class="tag">Chain of Custody Ledger</span>
+        <h1>ClusterTrace</h1>
+      </div>
+      <p style="color: var(--muted); font-size: 0.92rem; margin-top: 4px;">
+        Deterministic mass balance and source lot lineage for plastic collection and recycling.
+      </p>
+    </div>
+    <div class="header-actions">
+      <button class="secondary" onclick="refresh()">↻ Refresh State</button>
+      <button class="primary" onclick="createDemoScenario()">+ Create 340 kg Demo Scenario</button>
+    </div>
+  </header>
+
+  <!-- Product & Compliance Disclaimer -->
+  <div class="disclaimer-banner">
+    <span>⚠️</span>
+    <div>
+      <strong>Supporting Traceability Audit Pack · NOT an Official EPR Certificate</strong> — 
+      Collection weights, locations, and photo references are self-reported by field actors and unverified by independent scales or physical audits. Mass balance is verified deterministically against recorded input data.
+    </div>
+  </div>
+
+  <!-- Hero Sankalp Fraud Test Box -->
+  <div class="demo-hero">
+    <div>
+      <h2>Sankalp Demonstration: 340 kg Input vs 500 kg Output Claim</h2>
+      <p>
+        Demonstrates zero-tolerance fraud prevention: 2 lots totaling <strong>340.000 kg</strong> are batched together. When a recycler attempts to claim <strong>500.000 kg</strong> of recycled flakes, ClusterTrace strictly rejects the claim (+160 kg phantom mass) and logs the violation in the immutable event trail.
+      </p>
+    </div>
+    <div>
+      <button class="demo-btn" onclick="startFraudDemo()">▶ Run 340 kg Fraud Demo</button>
+    </div>
+  </div>
+
+  <div id="notice"></div>
+
+  <!-- Operational Perspective Tabs -->
+  <div class="tabs-nav-wrapper">
+    <div class="tabs-meta">Workflow Views · Single-tenant demonstration (No separate accounts/login required)</div>
+    <div class="tabs-nav">
+      <button class="tab-btn active" id="tab-picker" onclick="setTab('picker')">📦 1. Picker View</button>
+      <button class="tab-btn" id="tab-aggregator" onclick="setTab('aggregator')">🏭 2. Aggregator View</button>
+      <button class="tab-btn" id="tab-recycler" onclick="setTab('recycler')">♻️ 3. Recycler View</button>
+      <button class="tab-btn" id="tab-brand" onclick="setTab('brand')">🏷️ 4. Brand & Audit View</button>
+    </div>
+  </div>
+
+  <!-- VIEW 1: PICKER -->
+  <div id="view-picker" class="tab-content">
+    <div class="grid-2">
+      <section class="card">
+        <h3>Record Collection Lot</h3>
+        <p class="card-desc">Enter raw collection lot details collected from waste pickers or informal collection hubs.</p>
+        <form id="lotForm">
+          <label>
+            Picker ID / Identifier
+            <span class="field-hint">e.g., P-101, Ragpickers Self-Help Group</span>
+            <input name="picker" required placeholder="P-101">
+          </label>
+          <label>
+            Polymer Material
+            <span class="field-hint">Single plastic type</span>
+            <select name="material" required>
+              <option value="PET" selected>PET (Polyethylene Terephthalate)</option>
+              <option value="HDPE">HDPE (High-Density Polyethylene)</option>
+              <option value="PP">PP (Polypropylene)</option>
+              <option value="LDPE">LDPE (Low-Density Polyethylene)</option>
+            </select>
+          </label>
+          <label>
+            Field Weight (kg) <span class="self-reported-badge">Self-reported</span>
+            <span class="field-hint">Positive weight with at most 3 decimal places</span>
+            <input name="weight" type="number" step="0.001" min="0.001" required placeholder="120.000">
+          </label>
+          <label>
+            Collection Location / Ward <span class="self-reported-badge">Self-reported</span>
+            <span class="field-hint">Unverified location claim</span>
+            <input name="location" required placeholder="Kolkata Ward 12, Hub A">
+          </label>
+          <label>
+            Photo Reference String <span class="self-reported-badge">Unverified reference</span>
+            <span class="field-hint">Text reference or file pointer; no image validation performed</span>
+            <input name="photo_ref" placeholder="bag-pet-photo-001.jpg">
+          </label>
+          <button type="submit" class="primary" style="width: 100%;">Record Collection Lot</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h3>Recent Collection Lots</h3>
+        <p class="card-desc">All recorded lots awaiting aggregation or assigned to batches.</p>
+        <div class="table-wrapper">
+          <table id="pickerLotsTable">
+            <thead>
+              <tr>
+                <th>Lot ID</th>
+                <th>Picker</th>
+                <th>Material</th>
+                <th>Weight (kg)</th>
+                <th>Location</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- VIEW 2: AGGREGATOR -->
+  <div id="view-aggregator" class="tab-content" style="display: none;">
+    <div class="grid-2">
+      <section class="card">
+        <h3>Assemble Sealed Batch</h3>
+        <p class="card-desc">Merge unbatched collection lots of identical polymer material into a sealed processing batch.</p>
+        <form id="batchForm">
+          <div id="unbatchedList" style="margin-bottom: 16px;"></div>
+          <div id="batchSummaryBox" style="background: #f0f7f4; border: 1px solid #d1e7db; padding: 12px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem; display: none;">
+            <div>Selected Lots: <strong id="selectedCount">0</strong></div>
+            <div>Combined Input: <strong id="selectedMass">0.000</strong> kg</div>
+            <div>Selected Material: <strong id="selectedMaterial">-</strong></div>
+          </div>
+          <button type="submit" class="primary" style="width: 100%;">Create Sealed Batch</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h3>Assembled Batches</h3>
+        <p class="card-desc">Batches created from aggregated lots, ready for recycling facility processing.</p>
+        <div class="table-wrapper">
+          <table id="aggregatorBatchesTable">
+            <thead>
+              <tr>
+                <th>Batch ID</th>
+                <th>Material</th>
+                <th>Input Mass</th>
+                <th>Lots Count</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- VIEW 3: RECYCLER -->
+  <div id="view-recycler" class="tab-content" style="display: none;">
+    <div class="grid-1">
+      <section class="card">
+        <h3>Recycling Facility Processing & Mass-Balance Desk</h3>
+        <p class="card-desc">
+          Enter verified recycled output (pellets/flakes). Mass balance strictly enforces that <strong>output cannot exceed input</strong>. Excess output claims will be deterministically rejected and logged.
+        </p>
+        <div id="recyclerBatchesList"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- VIEW 4: BRAND & AUDIT -->
+  <div id="view-brand" class="tab-content" style="display: none;">
+    <div class="grid-1">
+      <section class="card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h3>Brand & Compliance Lineage Inspector</h3>
+            <p class="card-desc">Inspect chain-of-custody lineage for any batch and export supporting audit packs.</p>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <select id="lineageBatchSelect" style="width: auto; min-width: 200px; margin: 0;" onchange="loadLineage(this.value)">
+              <option value="">Select a batch to inspect...</option>
+            </select>
+            <button class="secondary" onclick="downloadCurrentAuditPack()" id="downloadAuditBtn" disabled>Download Audit Pack (JSON)</button>
+          </div>
+        </div>
+
+        <div id="lineageDrillDownView" style="display: none;">
+          <div class="lineage-container">
+            <h4 style="font-size: 0.95rem; margin-bottom: 12px; color: var(--primary-dark);">
+              Recorded Chain of Custody Stages for Batch <span id="lineageBatchIdDisplay"></span>
+            </h4>
+            
+            <!-- Recorded Stages Only: Collection Lots -> Aggregator Batch -> Recycler Output -->
+            <div class="lineage-stages">
+              
+              <!-- STAGE 1: COLLECTION LOTS -->
+              <div class="lineage-step">
+                <div class="lineage-step-header">
+                  <span>Stage 1</span>
+                  <span class="self-reported-badge">Self-Reported Claims</span>
+                </div>
+                <div class="lineage-step-title">Collection Lots</div>
+                <div class="lineage-step-content" id="lineageStageLots"></div>
+              </div>
+
+              <div class="lineage-arrow">→</div>
+
+              <!-- STAGE 2: AGGREGATOR BATCH -->
+              <div class="lineage-step">
+                <div class="lineage-step-header">
+                  <span>Stage 2</span>
+                  <span>Ledger Recorded</span>
+                </div>
+                <div class="lineage-step-title">Aggregator Batch</div>
+                <div class="lineage-step-content" id="lineageStageBatch"></div>
+              </div>
+
+              <div class="lineage-arrow">→</div>
+
+              <!-- STAGE 3: RECYCLER OUTPUT -->
+              <div class="lineage-step">
+                <div class="lineage-step-header">
+                  <span>Stage 3</span>
+                  <span id="lineageStageOutputBadge">Output Status</span>
+                </div>
+                <div class="lineage-step-title">Recycler Output</div>
+                <div class="lineage-step-content" id="lineageStageOutput"></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- AUDIT EVENT TRAIL -->
+      <section class="card">
+        <h3>Immutable Audit Event Trail</h3>
+        <p class="card-desc">Chronological trail of all ledger events, including mass-balance rejection attempts.</p>
+        <ul id="eventTrailList" class="event-list"></ul>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    let state = { lots: [], batches: [], events: [] };
+    let activeBatchIdForLineage = null;
+
+    function safe(s) {
+      return String(s ?? "").replace(/[&<>"']/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[c]));
+    }
+
+    function note(message, type = "ok") {
+      const el = $("notice");
+      el.textContent = message;
+      el.className = type;
+      el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    async function api(path, method = "GET", body = null) {
+      const opts = { method, headers: {} };
+      if (body) {
+        opts.headers["Content-Type"] = "application/json";
+        opts.body = JSON.stringify(body);
+      }
+      const res = await fetch("/api/" + path, opts);
+      const data = await res.json().catch(() => ({ error: "Invalid server response" }));
+      if (!res.ok) {
+        throw new Error(data.error || ("Request failed with status " + res.status));
+      }
+      return data;
+    }
+
+    function setTab(name) {
+      document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(el => el.style.display = "none");
+      const activeBtn = $("tab-" + name);
+      if (activeBtn) activeBtn.classList.add("active");
+      const activeContent = $("view-" + name);
+      if (activeContent) activeContent.style.display = "block";
+    }
+
+    async function refresh() {
+      try {
+        state = await api("state");
+        renderPickerView();
+        renderAggregatorView();
+        renderRecyclerView();
+        renderBrandView();
+        renderEventTrail();
+        if (activeBatchIdForLineage) {
+          loadLineage(activeBatchIdForLineage);
+        }
+      } catch (err) {
+        note("Failed to load state: " + err.message, "error");
+      }
+    }
+
+    /* 1. PICKER VIEW */
+    function renderPickerView() {
+      const tbody = $("pickerLotsTable").querySelector("tbody");
+      if (!state.lots.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--muted); padding: 20px;">No collection lots recorded yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = state.lots.slice().reverse().map(l => {
+        const status = l.batch_id 
+          ? `<span class="pill pill-batched">Batched (${safe(l.batch_id)})</span>`
+          : `<span class="pill pill-unbatched">Unbatched</span>`;
+        return `
+          <tr>
+            <td><code>${safe(l.id)}</code></td>
+            <td><strong>${safe(l.picker)}</strong></td>
+            <td>${safe(l.material)}</td>
+            <td><strong>${safe(l.weight_kg)}</strong> kg</td>
+            <td><small>${safe(l.location)}</small></td>
+            <td>${status}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    $("lotForm").onsubmit = async (e) => {
+      e.preventDefault();
+      try {
+        const formData = new FormData(e.target);
+        const payload = Object.fromEntries(formData);
+        const created = await api("lots", "POST", payload);
+        note(`Collection Lot ${created.id} recorded (${created.weight_kg} kg ${created.material})`, "ok");
+        e.target.reset();
+        await refresh();
+      } catch (err) {
+        note(err.message, "error");
+      }
+    };
+
+    /* 2. AGGREGATOR VIEW */
+    function renderAggregatorView() {
+      const unbatched = state.lots.filter(l => !l.batch_id);
+      const container = $("unbatchedList");
+      if (!unbatched.length) {
+        container.innerHTML = '<p style="color: var(--muted); font-size: 0.88rem;">No unbatched lots available. Record lots in Picker view first.</p>';
+      } else {
+        container.innerHTML = unbatched.map(l => `
+          <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; padding: 6px; border: 1px solid #e1e9e4; border-radius: 6px; background: white;">
+            <input type="checkbox" name="batchLot" value="${safe(l.id)}" data-weight="${safe(l.weight_kg)}" data-material="${safe(l.material)}" style="width: auto; margin: 0;" onchange="updateBatchSummary()">
+            <span>
+              <code>${safe(l.id)}</code> · <strong>${safe(l.picker)}</strong> · <strong>${safe(l.weight_kg)} kg</strong> ${safe(l.material)}
+              <small style="color: var(--muted); margin-left: 6px;">(${safe(l.location)})</small>
+            </span>
+          </label>
+        `).join("");
+      }
+      updateBatchSummary();
+
+      // Batches Table
+      const batchesTbody = $("aggregatorBatchesTable").querySelector("tbody");
+      if (!state.batches.length) {
+        batchesTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--muted); padding: 20px;">No batches created yet.</td></tr>';
+        return;
+      }
+      batchesTbody.innerHTML = state.batches.slice().reverse().map(b => {
+        const status = b.output_kg !== null
+          ? `<span class="pill pill-processed">Processed (${safe(b.output_kg)} kg)</span>`
+          : `<span class="pill pill-pending">Pending Recycler</span>`;
+        return `
+          <tr>
+            <td><code>${safe(b.id)}</code></td>
+            <td>${safe(b.material)}</td>
+            <td><strong>${safe(b.input_kg)}</strong> kg</td>
+            <td>${b.lot_ids.length} lots</td>
+            <td>${status}</td>
+            <td><button class="secondary" style="padding: 4px 10px; font-size: 0.8rem;" onclick="inspectBatch('${safe(b.id)}')">Lineage →</button></td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function updateBatchSummary() {
+      const checked = [...document.querySelectorAll('input[name="batchLot"]:checked')];
+      const summaryBox = $("batchSummaryBox");
+      if (!checked.length) {
+        summaryBox.style.display = "none";
+        return;
+      }
+      summaryBox.style.display = "block";
+      const count = checked.length;
+      let total = 0;
+      const materials = new Set();
+      checked.forEach(cb => {
+        total += parseFloat(cb.dataset.weight || "0");
+        materials.add(cb.dataset.material);
+      });
+      $("selectedCount").textContent = count;
+      $("selectedMass").textContent = total.toFixed(3);
+      if (materials.size === 1) {
+        $("selectedMaterial").textContent = [...materials][0];
+        $("selectedMaterial").style.color = "var(--primary-dark)";
+      } else {
+        $("selectedMaterial").textContent = "MIXED MATERIALS (" + [...materials].join(", ") + ") - INVALID!";
+        $("selectedMaterial").style.color = "var(--warn-text)";
+      }
+    }
+
+    $("batchForm").onsubmit = async (e) => {
+      e.preventDefault();
+      try {
+        const checked = [...document.querySelectorAll('input[name="batchLot"]:checked')].map(cb => cb.value);
+        if (!checked.length) {
+          throw new Error("Select at least one lot to create a batch");
+        }
+        const created = await api("batches", "POST", { lot_ids: checked });
+        note(`Batch ${created.id} assembled with ${created.input_kg} kg ${created.material}`, "ok");
+        await refresh();
+      } catch (err) {
+        note(err.message, "error");
+      }
+    };
+
+    /* 3. RECYCLER VIEW */
+    function renderRecyclerView() {
+      const container = $("recyclerBatchesList");
+      if (!state.batches.length) {
+        container.innerHTML = '<p style="color: var(--muted); font-size: 0.9rem;">No batches available for processing.</p>';
+        return;
+      }
+
+      container.innerHTML = state.batches.slice().reverse().map(b => {
+        const isProcessed = b.output_kg !== null;
+        return `
+          <div style="background: white; border: 1px solid var(--border); border-radius: 10px; padding: 18px; margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+              <div>
+                <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--primary);">Batch ${safe(b.id)}</span>
+                <h4 style="font-size: 1.1rem; margin: 2px 0;">${safe(b.material)} · Recorded Input: <strong>${safe(b.input_kg)} kg</strong></h4>
+                <small style="color: var(--muted);">${b.lot_ids.length} source lots (${b.lot_ids.map(safe).join(", ")})</small>
+              </div>
+              <div>
+                ${isProcessed
+                  ? `<span class="pill pill-processed">Output Recorded: ${safe(b.output_kg)} kg (${safe(b.yield_pct)}% Yield)</span>`
+                  : `<span class="pill pill-pending">Pending Recycler Output</span>`}
+              </div>
+            </div>
+
+            ${!isProcessed ? `
+              <div style="background: #fafbfa; border: 1px dashed var(--border); border-radius: 8px; padding: 14px; margin-top: 10px;">
+                <form onsubmit="submitRecyclerOutput(event, '${safe(b.id)}')">
+                  <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 220px;">
+                      <label style="margin: 0; font-size: 0.82rem;">
+                        Recycled Output Claim (kg):
+                        <input id="input_output_${safe(b.id)}" type="number" step="0.001" min="0.001" required placeholder="Output weight in kg">
+                      </label>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: flex-end; padding-top: 16px;">
+                      <button type="button" class="fraud-trigger" onclick="setFraudValue('${safe(b.id)}')">⚠️ Claim 500 kg (Fraud Test)</button>
+                      <button type="button" class="legit-trigger" onclick="setLegitValue('${safe(b.id)}', '${safe(b.input_kg)}')">✅ Claim Valid 90% Yield</button>
+                      <button type="submit" class="primary" style="padding: 10px 16px;">Submit Output</button>
+                    </div>
+                  </div>
+                  <small style="display: block; color: var(--muted); margin-top: 6px;">
+                    Mass balance rule: Output mass cannot exceed recorded input mass of ${safe(b.input_kg)} kg.
+                  </small>
+                </form>
+              </div>
+            ` : `
+              <div style="display: flex; justify-content: space-between; align-items: center; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px 14px; border-radius: 8px; margin-top: 8px; font-size: 0.86rem;">
+                <div>
+                  Processing completed at: <strong>${safe(b.processed_at || b.created_at)}</strong> · Yield: <strong>${safe(b.yield_pct)}%</strong>
+                </div>
+                <button class="secondary" onclick="inspectBatch('${safe(b.id)}')">View Lineage & Audit Pack →</button>
+              </div>
+            `}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function setFraudValue(batchId) {
+      const el = $("input_output_" + batchId);
+      if (el) el.value = "500.000";
+    }
+
+    function setLegitValue(batchId, inputKg) {
+      const el = $("input_output_" + batchId);
+      const validAmount = (parseFloat(inputKg) * 0.9).toFixed(3);
+      if (el) el.value = validAmount;
+    }
+
+    async function submitRecyclerOutput(e, batchId) {
+      e.preventDefault();
+      const input = $("input_output_" + batchId);
+      const outputKg = input ? input.value : "";
+      try {
+        const res = await api("outputs", "POST", { batch_id: batchId, output_kg: outputKg });
+        note(`Output of ${res.output_kg} kg confirmed for Batch ${batchId} (${res.yield_pct}% yield).`, "ok");
+        await refresh();
+      } catch (err) {
+        note(err.message, "error");
+        await refresh(); // Refresh so the OUTPUT_REJECTED event shows up in the event trail!
+      }
+    }
+
+    /* 4. BRAND & AUDIT VIEW */
+    function renderBrandView() {
+      const select = $("lineageBatchSelect");
+      const currentVal = select.value;
+      select.innerHTML = '<option value="">Select a batch to inspect...</option>' + 
+        state.batches.slice().reverse().map(b => {
+          const demoTag = b.is_demo ? " [Sankalp Demo 340kg]" : "";
+          const status = b.output_kg ? ` (${b.output_kg} kg output)` : " (pending)";
+          return `<option value="${safe(b.id)}">Batch ${safe(b.id)} - ${safe(b.input_kg)} kg ${safe(b.material)}${status}${demoTag}</option>`;
+        }).join("");
+      
+      if (currentVal && state.batches.some(b => b.id === currentVal)) {
+        select.value = currentVal;
+      } else if (activeBatchIdForLineage) {
+        select.value = activeBatchIdForLineage;
+      }
+    }
+
+    async function inspectBatch(batchId) {
+      activeBatchIdForLineage = batchId;
+      setTab("brand");
+      const select = $("lineageBatchSelect");
+      if (select) select.value = batchId;
+      await loadLineage(batchId);
+    }
+
+    async function loadLineage(batchId) {
+      if (!batchId) {
+        $("lineageDrillDownView").style.display = "none";
+        $("downloadAuditBtn").disabled = true;
+        activeBatchIdForLineage = null;
+        return;
+      }
+      activeBatchIdForLineage = batchId;
+      try {
+        const detail = await api("batch/" + encodeURIComponent(batchId));
+        $("lineageDrillDownView").style.display = "block";
+        $("downloadAuditBtn").disabled = false;
+        $("lineageBatchIdDisplay").textContent = detail.batch.id;
+
+        // Stage 1: Collection Lots
+        const lotsContainer = $("lineageStageLots");
+        lotsContainer.innerHTML = detail.source_lots.map(l => `
+          <div class="lot-chip">
+            <div style="display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 2px;">
+              <span><code>${safe(l.id)}</code> · ${safe(l.picker)}</span>
+              <span>${safe(l.weight_kg)} kg</span>
+            </div>
+            <div style="font-size: 0.74rem; color: var(--muted);">
+              Location (Self-reported): ${safe(l.location)}<br>
+              Photo Ref (Unverified): ${safe(l.photo_ref || "None")}
+            </div>
+          </div>
+        `).join("");
+
+        // Stage 2: Aggregator Batch
+        const b = detail.batch;
+        $("lineageStageBatch").innerHTML = `
+          <div style="background: #f8faf9; border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
+            <div style="margin-bottom: 6px;">Batch ID: <code>${safe(b.id)}</code></div>
+            <div style="margin-bottom: 6px;">Polymer: <strong>${safe(b.material)}</strong></div>
+            <div style="margin-bottom: 6px;">Total Input: <strong>${safe(b.input_kg)} kg</strong></div>
+            <div style="font-size: 0.76rem; color: var(--muted);">Created: ${safe(b.created_at)}</div>
+          </div>
+        `;
+
+        // Stage 3: Recycler Output
+        const outputContainer = $("lineageStageOutput");
+        const outputBadge = $("lineageStageOutputBadge");
+        if (b.output_kg !== null) {
+          outputBadge.className = "pill pill-processed";
+          outputBadge.textContent = "Verified Output";
+          outputContainer.innerHTML = `
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px;">
+              <div style="margin-bottom: 6px;">Recycled Output: <strong>${safe(b.output_kg)} kg</strong></div>
+              <div style="margin-bottom: 6px;">Processing Yield: <strong>${safe(b.yield_pct)}%</strong></div>
+              <div style="font-size: 0.76rem; color: var(--muted);">Processed: ${safe(b.processed_at || b.created_at)}</div>
+              <div style="font-size: 0.76rem; color: #15803d; font-weight: 600; margin-top: 6px;">✓ Mass Balance Check Passed</div>
+            </div>
+          `;
+        } else {
+          // Check if there was any rejected attempt for this batch
+          const rejectedAttempt = detail.events.find(e => e.kind === "OUTPUT_REJECTED");
+          outputBadge.className = rejectedAttempt ? "pill pill-rejected" : "pill pill-pending";
+          outputBadge.textContent = rejectedAttempt ? "Fraud Attempt Logged" : "Pending Processing";
+          outputContainer.innerHTML = `
+            <div style="background: ${rejectedAttempt ? "#fff5f5" : "#fffbeb"}; border: 1px solid ${rejectedAttempt ? "#fed7d7" : "#fef3c7"}; border-radius: 8px; padding: 12px;">
+              <div style="font-weight: 600; color: ${rejectedAttempt ? "#c53030" : "#b45309"}; margin-bottom: 4px;">
+                ${rejectedAttempt ? "Output Claim Rejected" : "No Output Recorded Yet"}
+              </div>
+              <p style="font-size: 0.78rem; color: var(--muted); margin-bottom: 8px;">
+                ${rejectedAttempt ? safe(rejectedAttempt.reason) : "Awaiting processing record from recycler."}
+              </p>
+              <button class="secondary" style="font-size: 0.78rem; padding: 4px 8px;" onclick="setTab('recycler')">Go to Recycler View →</button>
+            </div>
+          `;
+        }
+
+      } catch (err) {
+        note("Could not load lineage: " + err.message, "error");
+      }
+    }
+
+    function downloadCurrentAuditPack() {
+      if (activeBatchIdForLineage) {
+        window.location.href = "/api/report/" + encodeURIComponent(activeBatchIdForLineage);
+      }
+    }
+
+    /* 5. EVENT TRAIL */
+    function renderEventTrail() {
+      const container = $("eventTrailList");
+      if (!state.events.length) {
+        container.innerHTML = '<li style="color: var(--muted); font-size: 0.86rem;">No audit events recorded yet.</li>';
+        return;
+      }
+      container.innerHTML = state.events.slice().reverse().slice(0, 30).map(e => {
+        const isRejected = e.kind === "OUTPUT_REJECTED";
+        let summary = "";
+        if (e.kind === "LOT_RECORDED") summary = `Lot ${safe(e.lot_id)} recorded: ${safe(e.weight_kg)} kg ${safe(e.material || "")}`;
+        else if (e.kind === "BATCH_CREATED") summary = `Batch ${safe(e.batch_id)} assembled (${safe(e.input_kg)} kg ${safe(e.material || "")})`;
+        else if (e.kind === "OUTPUT_RECORDED") summary = `Batch ${safe(e.batch_id)} output recorded: ${safe(e.output_kg)} kg (${safe(e.yield_pct)}% yield)`;
+        else if (e.kind === "OUTPUT_REJECTED") summary = `⚠️ Output Claim Rejected on Batch ${safe(e.batch_id)}: Claimed ${safe(e.claimed_kg)} kg > Input ${safe(e.available_kg)} kg`;
+        else if (e.kind === "DEMO_SCENARIO_CREATED") summary = `Sankalp Demo Scenario Initialized: Batch ${safe(e.batch_id)} (340.000 kg input)`;
+        else summary = safe(e.kind);
+
+        return `
+          <li class="event-item ${isRejected ? 'rejected' : ''}">
+            <div class="event-meta">
+              <span><code>${safe(e.id)}</code> · ${safe(e.time)}</span>
+              <span class="pill ${isRejected ? 'pill-rejected' : 'pill-batched'}">${safe(e.kind)}</span>
+            </div>
+            <div class="event-title">${summary}</div>
+            ${e.reason ? `<div class="event-reason">Violation Reason: ${safe(e.reason)}</div>` : ''}
+          </li>
+        `;
+      }).join("");
+    }
+
+    /* SANKALP DEMO HELPERS */
+    async function createDemoScenario() {
+      try {
+        const res = await api("demo", "POST", {});
+        note(`Demo Scenario created! Batch ${res.batch.id} initialized with 340.000 kg PET input.`, "ok");
+        await refresh();
+        inspectBatch(res.batch.id);
+        return res.batch.id;
+      } catch (err) {
+        note("Demo creation failed: " + err.message, "error");
+      }
+    }
+
+    async function startFraudDemo() {
+      try {
+        const batchId = await createDemoScenario();
+        if (batchId) {
+          setTab("recycler");
+          setFraudValue(batchId);
+          note("Sankalp Demo batch created (340 kg). Switched to Recycler view with 500 kg claim pre-filled. Click 'Submit Output' to observe deterministic fraud rejection.", "info");
+        }
+      } catch (err) {
+        note("Could not start fraud demo: " + err.message, "error");
+      }
+    }
+
+    // Initialize
+    refresh();
+  </script>
+</body>
+</html>
