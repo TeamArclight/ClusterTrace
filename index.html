@@ -1298,7 +1298,7 @@
                       </label>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: flex-end; padding-top: 16px;">
-                      <button type="button" class="danger" onclick="setFraudValue('${safe(b.id)}')">⚠️ Claim 500 kg (Discrepancy Test)</button>
+                      <button type="button" class="danger" onclick="setDiscrepancyTestValue('${safe(b.id)}')">⚠️ Claim 500 kg (Discrepancy Test)</button>
                       <button type="button" class="success" onclick="setLegitValue('${safe(b.id)}', '${safe(b.input_kg)}')">✅ Report Valid 90% Yield</button>
                       <button type="submit" class="primary" style="padding: 10px 16px;">Submit Output Claim</button>
                     </div>
@@ -1319,7 +1319,7 @@
       }).join("");
     }
 
-    function setFraudValue(batchId) {
+    function setDiscrepancyTestValue(batchId) {
       const el = $("input_output_" + batchId);
       if (el) el.value = "500.000";
     }
@@ -1681,7 +1681,7 @@
             try {
               await api("outputs", "POST", { batch_id: batchId, output_kg: "500.000" });
             } catch (err) {
-              note(`Stage 3 Result: Claim Blocked! Flagged 160.000 kg mass discrepancy (+160 kg phantom output).`, "error");
+              note(`Stage 3 Result: Claim Blocked! Flagged 160.000 kg mass discrepancy (+160 kg excess claimed output).`, "error");
               await refresh();
 
               // Wait 2.5s then advance to Stage 4 (Auditor review)

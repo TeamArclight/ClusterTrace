@@ -31,7 +31,7 @@ All tests execute in under 1 second.
 
 ## 60-Second Guided Sankalp Demo Story
 
-At the top of the interface, judges and users are greeted by a guided **60-Second Demo Story** showcasing how ClusterTrace stops phantom recycling claims:
+At the top of the interface, judges and users are greeted by a guided **60-Second Demo Story** showcasing how ClusterTrace flags excess recycling output claims:
 
 1. **Stage 1 (Evidence & Collection)**: Pickers P-101 (200.000 kg) and P-102 (140.000 kg) record raw PET collection lots with synthetic demo evidence images, SHA-256 digests, and browser geolocation coordinates.
 2. **Stage 2 (Aggregation)**: The Central Aggregation Hub merges the two lots into a sealed 340.000 kg PET batch, accompanied by self-entered custody handovers.

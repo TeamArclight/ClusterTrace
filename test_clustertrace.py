@@ -109,13 +109,13 @@ class TestClusterTraceCore(unittest.TestCase):
         with self.assertRaises(ValueError):
             server.output(self.data, {"batch_id": b["id"], "output_kg": "10"})
 
-    def test_mass_balance_fraud_rejection(self):
+    def test_mass_balance_excess_output_rejection(self):
         # 340 kg input
         l1 = server.lot(self.data, {"picker": "P-1", "material": "PET", "location": "A", "weight": "200"})
         l2 = server.lot(self.data, {"picker": "P-2", "material": "PET", "location": "B", "weight": "140"})
         b = server.batch(self.data, {"lot_ids": [l1["id"], l2["id"]]})
 
-        # Fraud claim: 500 kg output on 340 kg input
+        # Excess claim: 500 kg output on 340 kg input
         res, err = server.output(self.data, {"batch_id": b["id"], "output_kg": "500.000"})
         self.assertIsNone(res)
         self.assertIsNotNone(err)
@@ -210,14 +210,14 @@ class TestClusterTraceHTTP(unittest.TestCase):
             finally:
                 exc.close()
 
-    def test_http_demo_and_fraud_rejection_persistence(self):
+    def test_http_demo_and_discrepancy_rejection_persistence(self):
         # 1. Trigger demo scenario creation via HTTP
         status, demo_res, _ = self.request("/api/demo", method="POST", payload={})
         self.assertEqual(status, 201)
         batch_id = demo_res["batch"]["id"]
         self.assertEqual(demo_res["batch"]["input_kg"], "340.000")
 
-        # 2. Attempt fraud: 500 kg output on 340 kg batch via HTTP
+        # 2. Attempt excess output claim: 500 kg output on 340 kg batch via HTTP
         status, err_res, _ = self.request("/api/outputs", method="POST", payload={
             "batch_id": batch_id,
             "output_kg": "500.000"
