@@ -35,7 +35,7 @@ At the top of the interface, judges and users are greeted by a guided **60-Secon
 
 1. **Stage 1 (Evidence & Collection)**: Pickers P-101 (200.000 kg) and P-102 (140.000 kg) record raw PET collection lots with synthetic demo evidence images, SHA-256 digests, and browser geolocation coordinates.
 2. **Stage 2 (Aggregation)**: The Central Aggregation Hub merges the two lots into a sealed 340.000 kg PET batch, accompanied by self-entered custody handovers.
-3. **Stage 3 (Deterministic Mass Balance)**: A recycling facility submits an unauthorized claim for 500.000 kg of recycled output. ClusterTrace deterministically blocks the claim, logging a **+160.000 kg Mass Discrepancy** in the permanent event trail.
+3. **Stage 3 (Deterministic Mass Balance)**: A recycling facility submits an excessive claim for 500.000 kg of recycled output. ClusterTrace deterministically blocks the claim, logging a **+160.000 kg Mass Discrepancy** in the recorded event trail.
 4. **Stage 4 (Auditor Review Queue)**: The flagged discrepancy is routed to the auditor queue. An auditor reviews the mathematical calculation and logs a review decision (`NEEDS_FIELD_CHECK`) with a mandatory audit reason.
 
 Click **"▶ Play 60-Second Demo Story"** to watch the story advance automatically or inspect each stage interactively.

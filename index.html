@@ -28,7 +28,6 @@
       background: var(--bg);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { overflow-x: hidden; }
     body { max-width: 1280px; margin: auto; padding: 24px 16px 80px; line-height: 1.5; font-size: 15px; }
 
     /* Header */
@@ -67,10 +66,14 @@
       font-size: 0.88rem;
       margin-bottom: 22px;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 12px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+      min-width: 0;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
+    .disclaimer-banner > div { min-width: 0; flex: 1; }
     .disclaimer-banner strong { color: #bf360c; font-weight: 700; }
 
     /* 60-Second Guided Demo Story Banner */
@@ -81,6 +84,9 @@
       padding: 24px 28px;
       margin-bottom: 24px;
       box-shadow: 0 6px 20px rgba(13, 110, 89, 0.22);
+      min-width: 0;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
     .story-header {
       display: flex;
@@ -89,9 +95,11 @@
       flex-wrap: wrap;
       gap: 16px;
       margin-bottom: 18px;
+      min-width: 0;
     }
-    .story-header h2 { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.01em; }
-    .story-header p { font-size: 0.94rem; color: #d6ebe4; max-width: 760px; margin-top: 4px; }
+    .story-header > div { min-width: 0; flex: 1; }
+    .story-header h2 { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.01em; overflow-wrap: break-word; word-break: break-word; }
+    .story-header p { font-size: 0.94rem; color: #d6ebe4; max-width: 760px; margin-top: 4px; overflow-wrap: break-word; word-break: break-word; }
     .play-btn {
       background: #ffecb3;
       color: #4e342e;
@@ -103,18 +111,22 @@
       cursor: pointer;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
       transition: all 0.15s ease;
       box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+      white-space: normal;
+      text-align: center;
     }
     .play-btn:hover { background: #ffe082; transform: translateY(-1px); }
 
     /* Story Stepper Cards */
     .story-stepper {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 12px;
       margin-top: 16px;
+      min-width: 0;
     }
     .story-step-card {
       background: rgba(255, 255, 255, 0.12);
@@ -126,6 +138,9 @@
       transition: all 0.2s ease;
       cursor: pointer;
       position: relative;
+      min-width: 0;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
     .story-step-card.active {
       background: white;
@@ -144,7 +159,7 @@
     .story-step-card.active .story-step-num { color: var(--primary); }
     .story-step-title { font-size: 0.98rem; font-weight: 700; margin-bottom: 6px; }
     .story-step-metric { font-size: 1.15rem; font-weight: 800; margin-bottom: 4px; }
-    .story-step-desc { font-size: 0.82rem; opacity: 0.9; line-height: 1.35; }
+    .story-step-desc { font-size: 0.82rem; opacity: 0.9; line-height: 1.35; overflow-wrap: break-word; word-break: break-word; }
     .story-step-card.active .story-step-desc { color: var(--muted); }
 
     /* Notification message */
@@ -156,13 +171,16 @@
       font-size: 0.94rem;
       line-height: 1.4;
       animation: fadeIn 0.2s ease;
+      min-width: 0;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
     #notice.ok { display: block; background: var(--ok-bg); color: var(--ok-text); border: 1px solid var(--ok-border); }
     #notice.error { display: block; background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--warn-border); }
     #notice.info { display: block; background: var(--info-bg); color: var(--info-text); border: 1px solid #bbd3ea; }
 
     /* Workflow Nav Tabs */
-    .tabs-nav-wrapper { margin-bottom: 22px; }
+    .tabs-nav-wrapper { margin-bottom: 22px; width: 100%; max-width: 100%; min-width: 0; }
     .tabs-meta {
       font-size: 0.82rem;
       font-weight: 700;
@@ -173,6 +191,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
     }
     .tabs-nav {
       display: flex;
@@ -181,10 +201,13 @@
       padding: 6px;
       border-radius: 10px;
       overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
     }
     .tab-btn {
-      flex: 1;
-      min-width: 140px;
+      flex: 0 0 auto;
       background: transparent;
       border: 0;
       color: var(--text);
@@ -193,7 +216,7 @@
       padding: 10px 14px;
       border-radius: 7px;
       cursor: pointer;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
@@ -208,21 +231,30 @@
     }
 
     /* Cards & Layouts */
-    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-    .grid-1 { display: grid; grid-template-columns: 1fr; gap: 20px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; min-width: 0; }
+    .grid-1 { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; min-width: 0; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; min-width: 0; }
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      min-width: 0;
+    }
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 22px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+      min-width: 0;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
-    .card h3 { font-size: 1.2rem; color: var(--primary-dark); margin-bottom: 8px; font-weight: 700; }
-    .card-desc { font-size: 0.88rem; color: var(--muted); margin-bottom: 16px; }
+    .card h3 { font-size: 1.2rem; color: var(--primary-dark); margin-bottom: 8px; font-weight: 700; overflow-wrap: break-word; word-break: break-word; }
+    .card-desc { font-size: 0.88rem; color: var(--muted); margin-bottom: 16px; overflow-wrap: break-word; word-break: break-word; }
 
     /* Form Inputs */
-    label { display: block; font-size: 0.88rem; font-weight: 650; margin-bottom: 12px; color: var(--text); }
+    label { display: block; font-size: 0.88rem; font-weight: 650; margin-bottom: 12px; color: var(--text); overflow-wrap: break-word; word-break: break-word; }
     .field-hint { display: block; font-size: 0.78rem; font-weight: normal; color: var(--muted); margin-top: 3px; }
     .evidence-badge {
       font-size: 0.72rem;
@@ -320,8 +352,15 @@
     }
 
     /* Tables */
-    .table-wrapper { overflow-x: auto; margin-top: 10px; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    .table-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-top: 10px;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 520px; }
     th { text-align: left; padding: 10px 12px; background: #eaf1ec; color: var(--muted); font-weight: 700; border-bottom: 1px solid var(--border); }
     td { padding: 11px 12px; border-bottom: 1px solid #e7eee9; vertical-align: middle; }
     tr:hover td { background: #fafbfa; }
@@ -352,7 +391,7 @@
     .finding-human { font-size: 0.82rem; color: #4e342e; background: #fffde7; padding: 6px 10px; border-radius: 6px; border: 1px solid #fff59d; margin-top: 6px; }
 
     /* Lineage Stages Visualizer */
-    .lineage-stages { display: flex; align-items: stretch; gap: 14px; overflow-x: auto; padding: 8px 2px 16px; }
+    .lineage-stages { display: flex; align-items: stretch; gap: 14px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 8px 2px 16px; width: 100%; max-width: 100%; min-width: 0; }
     .lineage-step {
       flex: 1;
       min-width: 260px;
@@ -388,6 +427,9 @@
       border-radius: 10px;
       padding: 16px 20px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+      min-width: 0;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
     .stat-label { font-size: 0.82rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
     .stat-value { font-size: 1.8rem; font-weight: 800; color: var(--primary-dark); margin: 4px 0; }
@@ -395,23 +437,27 @@
 
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
     @media (max-width: 900px) {
-      .story-stepper { grid-template-columns: 1fr; }
-      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .story-stepper { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid-2, .grid-3 { grid-template-columns: minmax(0, 1fr); }
       .lineage-stages { flex-direction: column; }
+      .lineage-step { min-width: 0; width: 100%; }
       .lineage-arrow { transform: rotate(90deg); margin: 4px 0; }
     }
     @media (max-width: 600px) {
-      body { padding: 16px 12px 60px; }
-      header { flex-direction: column; align-items: flex-start; }
+      body { padding: 14px 10px 60px; }
+      header { flex-direction: column; align-items: stretch; gap: 12px; }
       .brand-title { flex-wrap: wrap; gap: 8px; }
-      .brand-title h1 { font-size: 1.6rem; }
-      .header-actions { width: 100%; }
-      .header-actions button { flex: 1; font-size: 0.82rem; padding: 8px 10px; }
-      .story-hero { padding: 18px 14px; }
+      .brand-title h1 { font-size: 1.45rem; }
+      .header-actions { flex-direction: column; width: 100%; align-items: stretch; gap: 8px; }
+      .header-actions button { width: 100%; justify-content: center; font-size: 0.88rem; padding: 10px 14px; white-space: normal; text-align: center; }
+      .story-hero { padding: 16px 12px; }
+      .story-header { flex-direction: column; align-items: stretch; gap: 12px; }
       .story-header h2 { font-size: 1.25rem; }
       .play-btn { width: 100%; justify-content: center; }
-      .disclaimer-banner { flex-direction: column; align-items: flex-start; padding: 12px 14px; gap: 8px; }
-      .card { padding: 16px 12px; }
+      .story-stepper { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+      .disclaimer-banner { padding: 10px 12px; gap: 10px; font-size: 0.84rem; }
+      .card { padding: 14px 10px; }
+      .form-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
     }
   </style>
 </head>
@@ -450,7 +496,7 @@
         <span class="tag" style="background: rgba(255,255,255,0.2); color: white; margin-bottom: 6px;">Sankalp 60-Second Demo Story</span>
         <h2>Chain of Custody & Deterministic Discrepancy Flow</h2>
         <p>
-          Follow a real batch lifecycle: 200 kg + 140 kg collection lots are aggregated into a 340 kg batch. When an unauthorized 500 kg output claim is submitted, ClusterTrace deterministically flags the <strong>160 kg discrepancy</strong> and routes the case to auditor review.
+          Follow an illustrative batch journey: 200 kg + 140 kg collection lots are aggregated into a 340 kg batch. When an excessive 500 kg output claim is submitted, ClusterTrace deterministically flags the <strong>160 kg discrepancy</strong> and routes the case to auditor review.
         </p>
       </div>
       <div>
@@ -525,7 +571,7 @@
             <span class="field-hint">e.g., P-101, Ragpickers Self-Help Group</span>
             <input name="picker" required placeholder="P-101">
           </label>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-row">
             <label>
               Polymer Material
               <select name="material" required>
@@ -541,7 +587,7 @@
             </label>
           </div>
           
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-row">
             <label>
               Reported Rate (₹/kg)
               <span class="field-hint">For income calculation</span>
@@ -635,7 +681,7 @@
               <option value="AGGREGATOR_TO_RECYCLER">Aggregator → Recycler (Consignment Dispatch)</option>
             </select>
           </label>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-row">
             <label>
               Sender Name / Entity
               <input name="sender" required placeholder="e.g. Picker P-101">
@@ -645,7 +691,7 @@
               <input name="receiver" required placeholder="e.g. Kolkata Central Hub">
             </label>
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-row">
             <label id="handoverTargetLabel">
               Linked Lot ID (Optional)
               <input name="lot_id" placeholder="e.g. lot-xxxx">
@@ -729,7 +775,7 @@
         <form onsubmit="submitAuditorReview(event)">
           <input type="hidden" id="auditTargetType" value="BATCH">
           <input type="hidden" id="auditTargetId">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-row">
             <label>
               Audit Review Decision
               <select id="auditDecisionStatus" required>
@@ -748,7 +794,7 @@
             Mandatory Audit Findings & Rationale
             <textarea id="auditReviewReason" required rows="3" placeholder="Provide detailed explanation of scale verification, tare discrepancy, or field check results..."></textarea>
           </label>
-          <div style="display: flex; gap: 10px;">
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <button type="submit" class="primary">Record Audit Decision</button>
             <button type="button" class="secondary" onclick="$('auditorDecisionCard').style.display='none'">Cancel</button>
           </div>
@@ -1630,7 +1676,7 @@
           // Wait 2s then advance to Stage 3 (attempt 500 kg claim)
           setTimeout(async () => {
             showStoryStep(3);
-            note(`Stage 3: Submitting unauthorized 500.000 kg output claim on Batch ${batchId}...`, "info");
+            note(`Stage 3: Submitting excessive 500.000 kg output claim on Batch ${batchId}...`, "info");
             
             try {
               await api("outputs", "POST", { batch_id: batchId, output_kg: "500.000" });
