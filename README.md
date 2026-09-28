@@ -8,9 +8,10 @@ Built for the Sankalp competition demonstration.
 
 ## Quick Start
 
-ClusterTrace has **zero third-party dependencies**, running entirely on Python 3.10+ standard library.
+ClusterTrace requires Python 3.10+ and uses the lightweight, standard `Pillow` library for secure content-based image verification and local synthetic demo graphic generation.
 
 ```bash
+pip install Pillow
 python server.py
 ```
 
@@ -18,13 +19,13 @@ Then open your browser at **http://localhost:8000**.
 
 ### Running the Automated Test Suite
 
-Run the 18 focused unit and HTTP integration tests:
+Run the focused unit and HTTP integration tests:
 
 ```bash
 python -m unittest test_clustertrace.py -v
 ```
 
-All 18 tests execute in under 1 second.
+All tests execute in under 1 second.
 
 ---
 
@@ -32,8 +33,8 @@ All 18 tests execute in under 1 second.
 
 At the top of the interface, judges and users are greeted by a guided **60-Second Demo Story** showcasing how ClusterTrace stops phantom recycling claims:
 
-1. **Stage 1 (Evidence & Collection)**: Pickers P-101 (200.000 kg) and P-102 (140.000 kg) record raw PET collection lots with submitted photo evidence, SHA-256 digests, and browser geolocation coordinates.
-2. **Stage 2 (Aggregation)**: The Central Aggregation Hub merges the two lots into a sealed 340.000 kg PET batch, signed with custody handovers.
+1. **Stage 1 (Evidence & Collection)**: Pickers P-101 (200.000 kg) and P-102 (140.000 kg) record raw PET collection lots with synthetic demo evidence images, SHA-256 digests, and browser geolocation coordinates.
+2. **Stage 2 (Aggregation)**: The Central Aggregation Hub merges the two lots into a sealed 340.000 kg PET batch, accompanied by self-entered custody handovers.
 3. **Stage 3 (Deterministic Mass Balance)**: A recycling facility submits an unauthorized claim for 500.000 kg of recycled output. ClusterTrace deterministically blocks the claim, logging a **+160.000 kg Mass Discrepancy** in the permanent event trail.
 4. **Stage 4 (Auditor Review Queue)**: The flagged discrepancy is routed to the auditor queue. An auditor reviews the mathematical calculation and logs a review decision (`NEEDS_FIELD_CHECK`) with a mandatory audit reason.
 
@@ -45,10 +46,11 @@ Click **"▶ Play 60-Second Demo Story"** to watch the story advance automatical
 
 ### 1. Actual Evidence Capture
 - Uploads collection and handover photos from desktop or mobile (`.jpg`, `.jpeg`, `.png`, `.webp` up to 5 MB).
+- **Content-Based Validation**: Uploads are verified by inspecting image byte headers with `Pillow`. Disguised text, malformed files, and truncated streams are strictly blocked, regardless of claimed file extensions or MIME headers.
 - Files are securely stored locally in `uploads/` (outside Git, ignored by `.gitignore`), with sanitized unique filenames and path traversal protection.
 - Computes cryptographic SHA-256 digests linked directly to the event and batch audit pack.
 - Supports optional browser geolocation (`navigator.geolocation`) showing capture accuracy (e.g. `±12.5m`) and timestamp after explicit user consent.
-- All evidence is transparently labeled as **submitted evidence (unverified)**; never presented as independent physical truth.
+- All evidence is transparently labeled as **submitted evidence (unverified)**; synthetic demo graphics are explicitly marked as **synthetic demo evidence (depicting no real collection event)** in the UI, metadata, and audit pack exports.
 
 ### 2. Chain-of-Custody Handovers
 - Records transfers between supply chain actors:
@@ -57,7 +59,7 @@ Click **"▶ Play 60-Second Demo Story"** to watch the story advance automatical
 - Reconciles handover claimed weight against source lots or batches:
   - Detects and flags moisture losses, tare variances, or unexpected gains.
   - **Never silently alters the original collection lot weight.**
-- Records receiver acknowledgement lifecycle (`PENDING` → `ACKNOWLEDGED` or `DISPUTED`) without inventing automatic receipts.
+- Records receiver acknowledgement lifecycle (`PENDING` → `ACKNOWLEDGED` or `DISPUTED`). All acknowledgements are explicitly labeled as **self-entered demo receipts**; they do not use digital signatures or independently authenticated receivers.
 
 ### 3. Explainable Discrepancy Detection
 Deterministic mathematical and cryptographic rules analyze all records and produce human-readable findings:

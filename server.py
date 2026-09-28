@@ -8,10 +8,13 @@ from decimal import Decimal, InvalidOperation
 import email
 from email.policy import default as email_default_policy
 import hashlib
+import io
 import json
 import os
 import threading
 import uuid
+
+from PIL import Image, ImageDraw, UnidentifiedImageError
 
 ROOT = Path(__file__).parent
 DB_FILE = ROOT / "clustertrace.json"
@@ -99,40 +102,73 @@ def event(data, kind, **fields):
 # 1. ACTUAL EVIDENCE CAPTURE
 # ----------------------------------------------------------------------
 
-ALLOWED_IMAGE_TYPES = {
-    "image/jpeg": ".jpg",
-    "image/jpg": ".jpg",
-    "image/png": ".png",
-    "image/webp": ".webp"
-}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 
 
-def save_evidence(data, file_bytes, original_filename, content_type, geolocation=None):
+def validate_image_bytes(file_bytes):
     if len(file_bytes) > MAX_FILE_SIZE:
         raise ValueError("File exceeds maximum allowed size of 5 MB")
     if len(file_bytes) == 0:
         raise ValueError("File content is empty")
+    try:
+        bio = io.BytesIO(file_bytes)
+        with Image.open(bio) as im:
+            fmt = im.format
+            if fmt not in ("JPEG", "PNG", "WEBP"):
+                raise ValueError(f"Unsupported image format: {fmt}. Only JPEG, PNG, and WebP are allowed.")
+            im.verify()
+    except (UnidentifiedImageError, ValueError) as exc:
+        raise ValueError(f"Uploaded file is not a valid JPEG, PNG, or WebP image: {exc}")
+    except Exception as exc:
+        raise ValueError(f"Malformed or truncated image file: {exc}")
 
-    ext = ALLOWED_IMAGE_TYPES.get(content_type.lower())
-    if not ext:
-        # Check by filename extension fallback
-        orig_ext = Path(original_filename).suffix.lower()
-        if orig_ext in (".jpg", ".jpeg"):
-            ext = ".jpg"
-            content_type = "image/jpeg"
-        elif orig_ext == ".png":
-            ext = ".png"
-            content_type = "image/png"
-        elif orig_ext == ".webp":
-            ext = ".webp"
-            content_type = "image/webp"
-        else:
-            raise ValueError("Only JPEG, PNG, and WebP images are permitted")
+    canonical_mime = {
+        "JPEG": "image/jpeg",
+        "PNG": "image/png",
+        "WEBP": "image/webp"
+    }[fmt]
+    canonical_ext = {
+        "JPEG": ".jpg",
+        "PNG": ".png",
+        "WEBP": ".webp"
+    }[fmt]
+    return fmt, canonical_mime, canonical_ext
 
+
+def generate_synthetic_demo_image(lot_id, picker_id, weight_kg, location, gps_str):
+    width, height = 640, 380
+    im = Image.new("RGB", (width, height), color=(246, 249, 246))
+    draw = ImageDraw.Draw(im)
+
+    # Outer border
+    draw.rectangle([(10, 10), (width - 10, height - 10)], outline=(13, 110, 89), width=3)
+    # Header banner
+    draw.rectangle([(14, 14), (width - 14, 75)], fill=(225, 240, 233))
+    draw.text((30, 24), "SYNTHETIC DEMO EVIDENCE", fill=(13, 110, 89))
+    draw.text((30, 48), "ClusterTrace Sankalp Demo · Depicts no real collection event", fill=(70, 90, 85))
+
+    # Content
+    draw.text((30, 105), f"Sample Lot: {lot_id} ({picker_id})", fill=(20, 40, 35))
+    draw.text((30, 140), "Polymer: PET (Polyethylene Terephthalate)", fill=(40, 60, 55))
+    draw.text((30, 175), f"Recorded Weight: {weight_kg} kg (Self-reported field claim)", fill=(13, 110, 89))
+    draw.text((30, 210), f"Location: {location}", fill=(50, 70, 65))
+    draw.text((30, 245), f"Coordinates: {gps_str} (Unverified browser telemetry)", fill=(90, 110, 105))
+
+    # Bottom watermark bar
+    draw.rectangle([(14, height - 80), (width - 14, height - 14)], fill=(255, 235, 232))
+    draw.text((30, height - 68), "NOTICE: Illustrative Synthetic Graphic for Demonstration", fill=(179, 38, 30))
+    draw.text((30, height - 44), "Not a photograph of physical plastic waste or real recycling operations.", fill=(120, 50, 45))
+
+    bio = io.BytesIO()
+    im.save(bio, format="JPEG", quality=90)
+    return bio.getvalue()
+
+
+def save_evidence(data, file_bytes, original_filename, content_type=None, geolocation=None, is_synthetic_demo=False):
+    fmt, canonical_mime, canonical_ext = validate_image_bytes(file_bytes)
     sha256_hash = hashlib.sha256(file_bytes).hexdigest()
     safe_stem = "".join(c for c in Path(original_filename).stem if c.isalnum() or c in "-_")[:24] or "photo"
-    filename = f"{uuid.uuid4().hex[:12]}_{safe_stem}{ext}"
+    filename = f"{uuid.uuid4().hex[:12]}_{safe_stem}{canonical_ext}"
     target_path = get_uploads_dir() / filename
     target_path.write_bytes(file_bytes)
 
@@ -156,13 +192,16 @@ def save_evidence(data, file_bytes, original_filename, content_type, geolocation
         "url": f"/uploads/{filename}",
         "sha256": sha256_hash,
         "size_bytes": len(file_bytes),
-        "mime_type": content_type,
+        "mime_type": canonical_mime,
         "created_at": now(),
         "geolocation": geo_data,
-        "verification_status": "Submitted evidence (unverified)"
+        "is_synthetic_demo": is_synthetic_demo,
+        "synthetic_disclaimer": "Synthetic demo evidence. Depicts no real collection event." if is_synthetic_demo else None,
+        "verification_status": "Synthetic demo evidence (unverified)" if is_synthetic_demo else "Submitted evidence (unverified)"
     }
     data["evidence"].append(ev_item)
-    event(data, "EVIDENCE_UPLOADED", evidence_id=ev_item["id"], sha256=sha256_hash, original_name=original_filename)
+    event(data, "EVIDENCE_UPLOADED", evidence_id=ev_item["id"], sha256=sha256_hash,
+          original_name=original_filename, is_synthetic=is_synthetic_demo)
     return ev_item
 
 
@@ -336,6 +375,9 @@ def record_handover(data, payload):
         "evidence_id": evidence_id,
         "notes": notes,
         "acknowledgement_status": "PENDING",
+        "acknowledgement_type": "Self-entered receipt (unauthenticated party)",
+        "is_signed_or_authenticated": False,
+        "disclaimer": "Recorded as a self-entered handover acknowledgement; not an independently authenticated or signed receipt.",
         "acknowledged_at": None,
         "acknowledged_by": None,
         "reconciliation": reconciliation,
@@ -360,10 +402,13 @@ def acknowledge_handover(data, payload):
         raise ValueError("Acknowledged-by name is required")
 
     item["acknowledgement_status"] = status
+    item["acknowledgement_type"] = "Self-entered receipt (unauthenticated party)"
+    item["disclaimer"] = "Recorded as a self-entered handover acknowledgement; not an independently authenticated or signed receipt."
     item["acknowledged_at"] = now()
     item["acknowledged_by"] = acknowledged_by
     item["acknowledgement_notes"] = str(payload.get("notes", "")).strip()
-    event(data, "HANDOVER_ACKNOWLEDGED", handover_id=item["id"], status=status, acknowledged_by=acknowledged_by)
+    event(data, "HANDOVER_ACKNOWLEDGED", handover_id=item["id"], status=status,
+          acknowledged_by=acknowledged_by, acknowledgement_type="Self-entered receipt")
     return item
 
 
@@ -616,22 +661,16 @@ def create_demo_scenario(data):
     demo_seq = sum(1 for b in data["batches"] if b.get("is_demo")) + 1
     tag = f"Demo #{demo_seq}"
 
-    # Sample photo evidence files generated in uploads
-    uploads_dir = get_uploads_dir()
-    sample1_path = uploads_dir / f"demo_bag_p101_{uuid.uuid4().hex[:6]}.jpg"
-    sample2_path = uploads_dir / f"demo_bag_p102_{uuid.uuid4().hex[:6]}.jpg"
-    
-    # 1x1 pixel JPEG placeholder
-    dummy_jpeg = b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00`\x00`\x00\x00\xff\xdb\x00C\x00\x08\x06\x06\x07\x06\x05\x08\x07\x07\x07\t\t\x08\n\x0c\x14\r\x0c\x0b\x0b\x0c\x19\x12\x13\x0f\x14\x1d\x1a\x1f\x1e\x1d\x1a\x1c\x1c $.' \",#\x1c\x1c(7),01444\x1f'9=82<.342\xff\xc0\x00\x0b\x08\x00\x01\x00\x01\x01\x01\x11\x00\xff\xc4\x00\x1f\x00\x00\x01\x05\x01\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\xff\xda\x00\x08\x01\x01\x00\x00?\x00\xbf\x00\xff\xd9"
-    sample1_path.write_bytes(dummy_jpeg)
-    sample2_path.write_bytes(dummy_jpeg + b"extra-1")
+    # Generate valid illustrative synthetic demo images locally
+    img1_bytes = generate_synthetic_demo_image("P-101", f"Picker P-101 ({tag})", "200.000", "Kolkata Ward 12, Hub A (Self-reported)", "22.5726° N, 88.3639° E")
+    img2_bytes = generate_synthetic_demo_image("P-102", f"Picker P-102 ({tag})", "140.000", "Kolkata Ward 14, Hub B (Self-reported)", "22.5697° N, 88.3697° E")
 
-    ev1 = save_evidence(data, sample1_path.read_bytes(), sample1_path.name, "image/jpeg", {
+    ev1 = save_evidence(data, img1_bytes, f"synthetic_demo_p101_{uuid.uuid4().hex[:6]}.jpg", geolocation={
         "latitude": 22.5726, "longitude": 88.3639, "accuracy_m": 12.5, "captured_at": now()
-    })
-    ev2 = save_evidence(data, sample2_path.read_bytes(), sample2_path.name, "image/jpeg", {
+    }, is_synthetic_demo=True)
+    ev2 = save_evidence(data, img2_bytes, f"synthetic_demo_p102_{uuid.uuid4().hex[:6]}.jpg", geolocation={
         "latitude": 22.5697, "longitude": 88.3697, "accuracy_m": 15.0, "captured_at": now()
-    })
+    }, is_synthetic_demo=True)
 
     # Lot 1 (200 kg) & Lot 2 (140 kg)
     a = lot(data, {
@@ -661,12 +700,12 @@ def create_demo_scenario(data):
         "claimed_weight_kg": "200.000",
         "lot_id": a["id"],
         "evidence_id": ev1["id"],
-        "notes": "Verified intact bags at collection point"
+        "notes": "Demo collection handoff note (self-entered, unverified)"
     })
     acknowledge_handover(data, {
         "handover_id": ho1["id"],
         "status": "ACKNOWLEDGED",
-        "acknowledged_by": "Kolkata Hub Manager"
+        "acknowledged_by": "Kolkata Hub Manager (Self-entered demo receipt)"
     })
 
     # Handover 2: Picker P-102 -> Aggregator Hub
@@ -677,12 +716,12 @@ def create_demo_scenario(data):
         "claimed_weight_kg": "140.000",
         "lot_id": b["id"],
         "evidence_id": ev2["id"],
-        "notes": "Baled PET bottles"
+        "notes": "Demo transfer handoff note (self-entered, unverified)"
     })
     acknowledge_handover(data, {
         "handover_id": ho2["id"],
         "status": "ACKNOWLEDGED",
-        "acknowledged_by": "Kolkata Hub Manager"
+        "acknowledged_by": "Kolkata Hub Manager (Self-entered demo receipt)"
     })
 
     # Batch 340 kg
@@ -697,12 +736,12 @@ def create_demo_scenario(data):
         "receiver": "GreenTech Polymers Recycling Ltd",
         "claimed_weight_kg": "340.000",
         "batch_id": batch_item["id"],
-        "notes": "Dispatch manifest #CT-DEMO-340"
+        "notes": "Demo transfer note #CT-DEMO-340 (self-entered, unverified)"
     })
     acknowledge_handover(data, {
         "handover_id": ho3["id"],
         "status": "ACKNOWLEDGED",
-        "acknowledged_by": "GreenTech Inward Supervisor"
+        "acknowledged_by": "GreenTech Inward Supervisor (Self-entered demo receipt)"
     })
 
     event(data, "DEMO_SCENARIO_CREATED", batch_id=batch_item["id"], input_kg="340.000", tag=tag)
@@ -741,6 +780,8 @@ def report(data, batch_id):
     return {
         "title": "ClusterTrace Supporting Traceability Audit Pack",
         "official_epr_certificate": False,
+        "is_synthetic_demo": bool(item.get("is_demo", False)),
+        "synthetic_demo_disclaimer": "This batch contains synthetic demo records created for evaluation; it depicts no real physical collection or recycling." if item.get("is_demo") else None,
         "compliance_disclaimer": "This document is a supporting traceability audit pack for chain-of-custody verification. It is NOT an official EPR certificate or regulatory compliance document.",
         "generated_at": now(),
         "batch": item,
@@ -779,6 +820,8 @@ def batch_detail(data, batch_id):
 
     return {
         "batch": item,
+        "is_synthetic_demo": bool(item.get("is_demo", False)),
+        "synthetic_demo_disclaimer": "This batch contains synthetic demo records created for evaluation; it depicts no real physical collection or recycling." if item.get("is_demo") else None,
         "source_lots": source_lots,
         "handovers": batch_handovers,
         "evidence": linked_evidence,

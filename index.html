@@ -28,6 +28,7 @@
       background: var(--bg);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { overflow-x: hidden; }
     body { max-width: 1280px; margin: auto; padding: 24px 16px 80px; line-height: 1.5; font-size: 15px; }
 
     /* Header */
@@ -399,6 +400,19 @@
       .lineage-stages { flex-direction: column; }
       .lineage-arrow { transform: rotate(90deg); margin: 4px 0; }
     }
+    @media (max-width: 600px) {
+      body { padding: 16px 12px 60px; }
+      header { flex-direction: column; align-items: flex-start; }
+      .brand-title { flex-wrap: wrap; gap: 8px; }
+      .brand-title h1 { font-size: 1.6rem; }
+      .header-actions { width: 100%; }
+      .header-actions button { flex: 1; font-size: 0.82rem; padding: 8px 10px; }
+      .story-hero { padding: 18px 14px; }
+      .story-header h2 { font-size: 1.25rem; }
+      .play-btn { width: 100%; justify-content: center; }
+      .disclaimer-banner { flex-direction: column; align-items: flex-start; padding: 12px 14px; gap: 8px; }
+      .card { padding: 16px 12px; }
+    }
   </style>
 </head>
 <body>
@@ -459,7 +473,7 @@
         <div class="story-step-num">Stage 2 · Aggregation</div>
         <div class="story-step-title">Aggregator Batch</div>
         <div class="story-step-metric">340.000 kg</div>
-        <div class="story-step-desc">Central Hub aggregates lots into sealed PET batch with signed custody handovers.</div>
+        <div class="story-step-desc">Central Hub aggregates lots into sealed PET batch with self-entered custody handovers.</div>
       </div>
 
       <div class="story-step-card" id="stepCard-3" onclick="showStoryStep(3)">
@@ -1045,9 +1059,15 @@
           ? `<span class="pill pill-batched">Batched (${safe(l.batch_id)})</span>`
           : `<span class="pill pill-unbatched">Unbatched</span>`;
         const ev = state.evidence.find(e => e.id === l.evidence_id);
-        const evDisplay = ev 
-          ? `<a href="${safe(ev.url)}" target="_blank" style="font-size: 0.78rem;">📷 View (${safe(ev.sha256.slice(0, 8))}...)</a>`
-          : (l.photo_ref ? `<span style="font-size: 0.78rem; color: var(--muted);">${safe(l.photo_ref)}</span>` : '<span style="color: var(--muted);">None</span>');
+        let evDisplay = '<span style="color: var(--muted);">None</span>';
+        if (ev) {
+          const isSynth = ev.is_synthetic_demo;
+          const badgeClass = isSynth ? 'pill-review' : 'pill-batched';
+          const label = isSynth ? '🖼️ Synthetic Demo' : '📷 Evidence';
+          evDisplay = `<a href="${safe(ev.url)}" target="_blank" class="pill ${badgeClass}" style="text-decoration:none; font-size:0.75rem;">${label} (${safe(ev.sha256.slice(0, 8))}...)</a>`;
+        } else if (l.photo_ref) {
+          evDisplay = `<span style="font-size: 0.78rem; color: var(--muted);">${safe(l.photo_ref)}</span>`;
+        }
 
         return `
           <tr>
@@ -1386,9 +1406,29 @@
         $("downloadAuditBtn").disabled = false;
         $("lineageBatchIdDisplay").textContent = detail.batch.id;
 
+        let syntheticBanner = '';
+        if (detail.is_synthetic_demo) {
+          syntheticBanner = `
+            <div style="background: #fff8e1; border: 1px solid #ffe082; color: #795548; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 0.86rem;">
+              <strong>SYNTHETIC DEMO EVIDENCE</strong>: This batch contains synthetic demo records created for evaluation; it depicts no real physical collection or recycling.
+            </div>
+          `;
+        }
+
         // Stage 1: Collection Lots
         $("lineageStageLots").innerHTML = detail.source_lots.map(l => {
           const ev = detail.evidence.find(e => e.id === l.evidence_id);
+          let imgBlock = '';
+          if (ev) {
+            imgBlock = `
+              <div style="margin-top: 6px;">
+                ${ev.is_synthetic_demo ? '<div style="font-size:0.68rem; color:#b45309; font-weight:700; margin-bottom:2px;">🖼️ Synthetic Demo Evidence</div>' : ''}
+                <a href="${safe(ev.url)}" target="_blank" style="display:block;">
+                  <img src="${safe(ev.url)}" style="max-width:100%; height:75px; object-fit:cover; border-radius:4px; border:1px solid #cce3d7;" alt="Lot Evidence">
+                </a>
+              </div>
+            `;
+          }
           return `
             <div style="background: #f0f7f3; border: 1px solid #d5e6db; border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; font-size: 0.82rem;">
               <div style="display: flex; justify-content: space-between; font-weight: 700;">
@@ -1397,8 +1437,9 @@
               </div>
               <div style="font-size: 0.74rem; color: var(--muted); margin-top: 3px;">
                 Location: ${safe(l.location)}<br>
-                ${ev ? `Photo SHA: <code>${safe(ev.sha256.slice(0, 10))}...</code>` : 'Photo: None'}
+                ${ev ? `SHA: <code>${safe(ev.sha256.slice(0, 10))}...</code>` : 'Evidence: None'}
               </div>
+              ${imgBlock}
             </div>
           `;
         }).join("");
@@ -1407,6 +1448,7 @@
         const b = detail.batch;
         $("lineageStageBatch").innerHTML = `
           <div style="background: #f8faf9; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 0.84rem;">
+            ${syntheticBanner}
             <div style="margin-bottom: 4px;">Batch ID: <code>${safe(b.id)}</code></div>
             <div style="margin-bottom: 4px;">Polymer: <strong>${safe(b.material)}</strong></div>
             <div style="margin-bottom: 4px;">Recorded Input: <strong>${safe(b.input_kg)} kg</strong></div>
@@ -1447,12 +1489,12 @@
         // Handovers
         const hoContainer = $("lineageHandoversList");
         if (!detail.handovers.length) {
-          hoContainer.innerHTML = '<span style="color: var(--muted); font-size: 0.82rem;">No handover transfers logged for this batch.</span>';
+          hoContainer.innerHTML = '<span style="color: var(--muted); font-size: 0.82rem;">No custody transfer handovers logged for this batch.</span>';
         } else {
           hoContainer.innerHTML = detail.handovers.map(h => `
-            <div style="background: white; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; margin-bottom: 6px; font-size: 0.82rem; display: flex; justify-content: space-between;">
+            <div style="background: white; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; margin-bottom: 6px; font-size: 0.82rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
               <span><strong>${safe(h.sender)}</strong> → <strong>${safe(h.receiver)}</strong> (${safe(h.claimed_weight_kg)} kg)</span>
-              <span>${safe(h.acknowledgement_status)}</span>
+              <span style="font-size: 0.76rem; color: var(--muted);">Status: ${safe(h.acknowledgement_status)} (${safe(h.acknowledgement_type || 'Self-entered receipt')})</span>
             </div>
           `).join("");
         }
@@ -1583,7 +1625,7 @@
         // Wait 1.5s then advance to Stage 2
         setTimeout(async () => {
           showStoryStep(2);
-          note(`Stage 2: Assembled into sealed Batch ${batchId} (340.000 kg PET) with signed custody handovers.`, "ok");
+          note(`Stage 2: Assembled into sealed Batch ${batchId} (340.000 kg PET) with self-entered custody handovers.`, "ok");
 
           // Wait 2s then advance to Stage 3 (attempt 500 kg claim)
           setTimeout(async () => {
